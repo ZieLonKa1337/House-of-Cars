@@ -29,3 +29,7 @@ Ablauf:
 1. Als Inhaber möchte ich eine Übersicht über den aktuellen Status des Parkhauses, um mir einen Eindruck verschaffen zu können.
 1. Als Inhaber möchte ich eine Auswertung der Statistiken, um zu sehen, ob mein Parkhaus profitabel ist.
 1. Als Hausmeister benötige ich Informationen über die geparkten Autos, um Überzieher abschleppen zu können.
+
+### Story Map
+
+[![Story Map](story%20map.png)](https://trello.com/b/YRUMHoyC/h-brs-ws-2017-software-engineering-i-praktikum-35)
