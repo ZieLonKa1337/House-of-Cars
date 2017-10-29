@@ -1,0 +1,51 @@
+Wer sind die Stakeholder eines digitalisierten Parkhauses?
+
+Zu den Stakeholder'n eines digitalisierten Parkhauseses gehoeren sehr viele Menschen.Die Stadt bzw. der Staat, Anwohner und Unternehmen in der naehe haben ein berechtigtes Interesse am Ergebnis des Projektes, da sie von zusaetzlichen Parkplaetzen
+in der Regel profitieren. Kunden des Parkhauseses gehoeren selbstverstaendlich auch zu den Stakeholder'n, ebenso wie die Mitarbeiter und Eigentuemer welche die Gruppen sind die expliziet von der Digitalisierung profitieren.
+Einzig die Mitarbeiter die eventuel durch die Digitalisierung ihre Arbeitsplaetze verlieren sowie Konkurrenten sind die Gegner des Projektes, auch wenn sie ebenso interessiert am Ergebnis sind. Weiterhin hat der Finanzier
+interessa an dem Ergebnis, jedoch ausschließlich an der Unternemensleistung soweit er/sie nicht einer anderen Gruppe Stakeholdern angehoert.
+
+Welche Stakeholder sind intern? Welche extern? Welche aktiv? Welche passiv?
+
+Interne Stakeholder:
+
+Eigentuemer
+Management
+Mitarbeiter
+
+Externe Stakeholder:
+
+Finanzier/Fremdkapitalgeber
+Kunden
+Staat/Stadt
+
+Zu den Aktiven Stakeholder'n zaehlen das Management, die Mitarbeiter und die Kunden, alle andere Gruppen profitieren nur indirekt von dem Projekt.
+
+
+
+Welche Konzepte für ein digitalisiertes Parkhaus stiftet welchen Nutzen für welche Stakeholder?
+
+Die Digitalisierung des Parkhauseses stiftet Nutzen fuer mehrere Stakeholder:
+
+Kunden/Stadt:
+- Anzahl freier Parkplaetze in Innensteadten am Fahrbahnrand oder von außen am Parkhaus zu sehen, wodurch sich die Parkplatzsuche in einem vollen parkhaus vermeide laesst.
+	>Einfacher und angenehmer fuer Kunden, produktiver fuer Eigentuemer
+- Einfaches ein und auschecken, besonders fuer Dauerparker mit festen elektronischen Tickets was auch zu fluessigerem Straßenverlauf fuehrt. 
+	> Einfacher fuer Kunden/Eigentuemer,effizienter und angenehmer fuer den Stadt.
+
+Management:
+- Hauptnutzungszeiten, Statistiken, Kamerabilder und vieles mehr bequem vom Arbeitsplatz aus einsehen ohne viel muehe oder Papierunterlagen.
+	> Einfacher und angenehmer fuer Management,produktiver fuer Management und Eigentuemer
+
+Eigentuemer/Fremdkapitalgeber:
+- Einsparungen durch einsparungen bei Mitarbeitern wie zum Beispiel dem Schranken- und Kassenwart die mit dem Hausmeister zusammen gelegt werden koennen.
+	> Produktiver fuer Eigentuemer
+	
+Welche Konzepte für Ihr digitalisiertes Parkhaus sind disruptiv? Welches Ihrer Konzepte für eine "bessere Welt" erfordert welchen Kommunikationsplan mit welchem Stakeholder?
+
+Das Disruptive an einem digitalisierten Parkhaus ist das man durch die einsparungen und verbesserungen im Bereich Personal und Logistik viel Geld einsparen und gleichzeitig fuer die Kunden angenehmer und einfacher
+erscheint. Zusaetzlich lassen sich Gescheaftsberichte und Analysen schneller und leichter erstellen, ein Manager kann einfach viele Parkhaeuser verwalten und die stadt kann digitale Anzeigen mit freihen Parkpleatzen
+anbieten.
+
+Ein Digitalisiertes Parkhaus ist in der Regel nicht nachhaeltiger als ein normales, da weiterhin bedruckte Tickets und Quittungen ausgedruckt werden. Allerdings koennte man mit wiederverwendbaren Chipkarten arbeiten um
+tickets zu ersetzten und Solarpanele auf dem Dach ( solange kein Freideck exestiert) um Umweltschonender zu sein. Zudem koennte man Quittungen nur ausgeben wenn der Kunde es wuenscht um weiter Papier zu sparen. 
