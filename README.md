@@ -1,17 +1,24 @@
-# House-of-Cars
-Praktikum Parkhaus
+# House of Cars
 
-## Rollen
+Digitalisiertes Parkhaus im Praktikumsprojekt der Informationssicherheit an der H-BRS, Wintersemester 2017.
 
-Manager/Besitzer
-Hausmeister/Verwalter // Trotz automatischem System benötigt für Notfaelle, bzw als Verwalter für z.b. Parker die auf nicht
-                      //    Dauerparkpleatzen dauerhauft parken
-Kunde
+- Digitalisierungskonzept
+- [Lastenheft](doc/Lastenheft.md)
+- [Stakeholder-Analyse](doc/Stakeholder-Analyse.txt)
+
+---
+
+### Rollen
+
+- Manager/Besitzer
+- Hausmeister/Verwalter _Trotz automatischem System benötigt für Notfaelle, bzw als Verwalter für z.b. Parker die auf nicht Dauerparkpleatzen dauerhauft parken_
+- Kunde
 
 Ablauf:
+
 - Kunde sieht imformationen über freihe Parkplaetze, entweder vor ort oder an Haupverkehrswegen als Digitale Anzeigen
-- Kunde faehrt and die Schranke und zieht ein Ticket     // Alternative App fürs direkte bezahlen und dauerparker
-- Kunde erhaelt das Ticker mit User ID // Zeitstempel waehre manipulierbar
+- Kunde faehrt and die Schranke und zieht ein Ticket _Alternative App fürs direkte bezahlen und dauerparker_
+- Kunde erhaelt das Ticker mit User ID _Zeitstempel waehre manipulierbar_
 - Kunde parkt.
 - Kunde bezahlt ticket mit vom System errechneten Preis
 - Kunde verlässt das Parkhaus indem er die ausfahrt benutzt und die schranke mit dem bezahlten Ticket öffnet.
@@ -29,7 +36,3 @@ Ablauf:
 1. Als Inhaber möchte ich eine Übersicht über den aktuellen Status des Parkhauses, um mir einen Eindruck verschaffen zu können.
 1. Als Inhaber möchte ich eine Auswertung der Statistiken, um zu sehen, ob mein Parkhaus profitabel ist.
 1. Als Hausmeister benötige ich Informationen über die geparkten Autos, um Überzieher abschleppen zu können.
-
-### Story Map
-
-[![Story Map](story%20map.png)](https://trello.com/b/YRUMHoyC/h-brs-ws-2017-software-engineering-i-praktikum-35)
