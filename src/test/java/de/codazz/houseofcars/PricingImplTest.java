@@ -9,17 +9,12 @@ import java.time.Instant;
 import static org.junit.Assert.assertEquals;
 
 /** @author rstumm2s */
-public class PricingTest {
+public class PricingImplTest {
     Pricing pricing;
 
     @Before
     public void setUp() throws Exception {
-        pricing = new AbstractPricing() {
-            @Override
-            public int euroCents(final Instant from, final Instant to) {
-                return (int) Duration.between(from, to).toHours() * 100;
-            }
-        };
+        pricing = (from, to) -> (int) Duration.between(from, to).toHours() * 100;
     }
 
     @Test

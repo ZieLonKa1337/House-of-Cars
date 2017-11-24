@@ -1,9 +1,58 @@
+plugins {
+    id 'io.github.divinespear.jpa-schema-generate' version '0.2.1-1'
+    id 'org.flywaydb.flyway' version '4.2.0'
+}
+
 apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'jpa-schema-generate'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testImplementation 'junit:junit:4.12'
+    compile 'org.slf4j:slf4j-simple:1.7.21'
+    compile 'com.esotericsoftware:jsonbeans:0.7'
+    compile 'com.sparkjava:spark-core:2.7.1'
+    compile 'com.sparkjava:spark-template-mustache:2.7.1'
+    compile 'javax.persistence:javax.persistence-api:2.2'
+    compile 'org.hibernate:hibernate-core:5.2.12.Final'
+    runtime 'org.postgresql:postgresql:42.1.4.jre7'
+    testCompile 'junit:junit:4.12'
+}
+
+mainClassName = 'de.codazz.houseofcars.GarageImpl'
+
+sourceSets {
+    generated {}
+}
+
+generateSchema {
+    vendor = 'hibernate'
+    packageToScan = ['de.codazz.houseofcars.domain']
+    format = true
+    persistenceUnitName = 'HouseOfCars'
+    databaseProductName = 'PostgreSQL'
+    databaseMajorVersion = 9
+    databaseMinorVersion = 6
+    jdbcDriver = 'org.postgresql.Driver'
+    jdbcUrl = 'jdbc:postgresql://localhost:5432/houseofcars'
+    scriptAction = 'create'
+    outputDirectory = file 'src/generated/resources/db'
+    createOutputFileName = 'schema.sql'
+    lineSeparator = 'LF'
+}
+
+flyway {
+    url = 'jdbc:postgresql://localhost:5432/houseofcars'
+    user = 'houseofcars'
+}
+
+apply plugin: 'idea'
+
+idea {
+    module {
+        generatedSourceDirs += file 'src/generated/java'
+    }
 }
