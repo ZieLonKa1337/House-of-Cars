@@ -26,8 +26,8 @@ public class GarageImpl implements Garage {
     private final Config config;
     private final EntityManager entityManager;
 
-    private final TypedQuery<? extends Number> numTotal, numUsed;
-    private final TypedQuery<Spot> nextFree = null;
+    private final TypedQuery<? extends Number> numTotal, numUsed, numUsed_type, numTotal_type;
+    private final TypedQuery<Spot> nextFree;
 
     public GarageImpl() {
         this(null);
@@ -60,8 +60,11 @@ public class GarageImpl implements Garage {
 
         // build queries
         numTotal = entityManager.createQuery("SELECT COUNT(s) FROM Spot s", Long.class);
+        numTotal_type = entityManager.createQuery("SELECT COUNT(s) FROM Spot s WHERE s.type = :type", Long.class);
         numUsed = entityManager.createQuery("SELECT COUNT(p) FROM Parking p", Long.class);
-//        nextFree = entityManager.createQuery("SELECT s FROM Spot s WHERE ", Spot.class); // TODO
+        numUsed_type = entityManager.createQuery("SELECT COUNT(p) FROM Parking p WHERE p.spot.type = :type", Long.class);
+        nextFree = entityManager.createQuery("SELECT s FROM Spot s WHERE s.type = :type AND s NOT IN (SELECT DISTINCT p.spot FROM Parking p WHERE p.spot IS NOT NULL)", Spot.class)
+                .setMaxResults(1);
     }
 
     @Override
@@ -75,13 +78,26 @@ public class GarageImpl implements Garage {
     }
 
     @Override
+    public int numTotal(final Spot.Type type) {
+        numTotal_type.setParameter("type", type);
+        return numTotal_type.getSingleResult().intValue();
+    }
+
+    @Override
     public int numUsed() {
         return numUsed.getSingleResult().intValue();
     }
 
     @Override
-    public Optional<Spot> nextFree() {
-        return Optional.ofNullable(nextFree.getSingleResult());
+    public int numUsed(final Spot.Type type) {
+        numUsed_type.setParameter("type", type);
+        return numUsed_type.getSingleResult().intValue();
+    }
+
+    @Override
+    public Optional<Spot> nextFree(final Spot.Type type) {
+        nextFree.setParameter("type", type);
+        return nextFree.getResultStream().findFirst();
     }
 
     @Override

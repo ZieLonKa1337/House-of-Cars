@@ -12,13 +12,19 @@ public interface Garage extends Runnable, Closeable {
     EntityManager entityManager();
 
     int numTotal();
+    int numTotal(Spot.Type type);
+
     int numUsed();
+    int numUsed(Spot.Type type);
 
     default int numFree() {
         return numTotal() - numUsed();
     }
+    default int numFree(final Spot.Type type) {
+        return numTotal(type) - numUsed(type);
+    }
 
-    Optional<Spot> nextFree();
+    Optional<Spot> nextFree(final Spot.Type type);
 
     @Override
     default void close() throws IOException {

@@ -27,6 +27,9 @@ alter table Parking
 	add constraint UK_kawfsygge06ewo6sefwej2e3w unique (licensePlate_code);
 
 alter table Parking
+	add constraint UK_7lw0vq33rsqrdvgq1kqtsu61q unique (spot_id);
+
+alter table Parking
 	add constraint FK3hdgwo6uqbdkbf38bor3ifmc3 foreign key (licensePlate_code)references LicensePlate;
 
 alter table Parking

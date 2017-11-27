@@ -3,7 +3,6 @@ package de.codazz.houseofcars.domain;
 import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.PrePersist;
 import javax.persistence.Transient;
 import java.time.Clock;
 import java.time.ZonedDateTime;
@@ -19,14 +18,17 @@ public abstract class Activity extends Entity {
     @Column(columnDefinition = "timestamptz")
     private ZonedDateTime started, finished;
 
+    /** for testing */
     @Transient
-    transient Clock clock;
+    transient Clock clock = Clock.systemDefaultZone();
 
-    @PrePersist
-    public void prePersist() {
-        /* TODO this will usually be later than started or finished
-         * so it's not really the creation time / logical inconsistency => remove? */
+    /** @deprecated only for JPA */
+    @Deprecated
+    public Activity() {}
+
+    protected Activity(ZonedDateTime created) {
         if (created == null) created = ZonedDateTime.now(clock);
+        this.created = created;
     }
 
     public Optional<ZonedDateTime> started() {
