@@ -1,13 +1,13 @@
 house-of-cars.json
-generated
+generated/
 
 # Gradle
 .gradle
-build
+build/
 
 # IntelliJ IDEA
 *.iml
 *.iws
 *.ipr
-.idea
-out
+.idea/
+out/

@@ -47,7 +47,7 @@ public class GarageImpl implements Garage {
         final Map<String, Object> persistenceFactoryProp = new HashMap<>();
         persistenceFactoryProp.put(AvailableSettings.JPA_JDBC_URL, config.jdbcUrl());
         persistenceFactoryProp.put(AvailableSettings.JPA_JDBC_DRIVER, "org.postgresql.Driver");
-        persistenceFactoryProp.put(AvailableSettings.JPA_JDBC_USER, "houseofcars");
+        persistenceFactoryProp.put(AvailableSettings.JPA_JDBC_USER, config.jdbcUser());
         persistenceFactoryProp.put(AvailableSettings.JPA_JDBC_PASSWORD, config.jdbcPassword());
         entityManager = new HibernatePersistenceProvider()
                 .createContainerEntityManagerFactory(

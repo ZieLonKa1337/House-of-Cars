@@ -13,6 +13,6 @@ public class ConfigImpl extends AbstractConfig {
     }
 
     public ConfigImpl() {
-        super(80, "jdbc:postgresql://localhost:5432/houseofcars", null);
+        super(80, "jdbc:postgresql://localhost:5432/houseofcars", "houseofcars", null);
     }
 }

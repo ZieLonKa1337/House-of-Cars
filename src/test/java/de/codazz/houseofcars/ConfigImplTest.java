@@ -24,6 +24,7 @@ public class ConfigImplTest {
         final Config config = new ConfigImpl();
         assertEquals(80, config.port());
         assertEquals("jdbc:postgresql://localhost:5432/houseofcars", config.jdbcUrl());
+        assertEquals("houseofcars", config.jdbcUser());
         assertNull(config.jdbcPassword());
     }
 
@@ -31,6 +32,7 @@ public class ConfigImplTest {
     public void load() {
         assertEquals(5555, config.port());
         assertEquals("jdbc:postgresql://localhost:5432/houseofcars-test", config.jdbcUrl());
+        assertEquals("houseofcars-test", config.jdbcUser());
         assertEquals("h-brs", config.jdbcPassword());
     }
 }

@@ -5,12 +5,13 @@ import java.util.Objects;
 /** @author rstumm2s */
 abstract class AbstractConfig implements Config {
     private int port;
-    private String jdbcUrl, jdbcPassword;
+    private String jdbcUrl, jdbcUser, jdbcPassword;
 
     AbstractConfig(final int port,
-            final String jdbcUrl, final String jdbcPassword) {
+            final String jdbcUrl, final String jdbcUser, final String jdbcPassword) {
         this.port = port;
         this.jdbcUrl = jdbcUrl;
+        this.jdbcUser = jdbcUser;
         this.jdbcPassword = jdbcPassword;
     }
 
@@ -25,6 +26,11 @@ abstract class AbstractConfig implements Config {
     }
 
     @Override
+    public String jdbcUser() {
+        return jdbcUser;
+    }
+
+    @Override
     public String jdbcPassword() {
         return jdbcPassword;
     }
@@ -36,6 +42,7 @@ abstract class AbstractConfig implements Config {
         final AbstractConfig that = (AbstractConfig) o;
         return port() == that.port() &&
                 Objects.equals(jdbcUrl(), that.jdbcUrl()) &&
+                Objects.equals(jdbcUser(), that.jdbcUser()) &&
                 Objects.equals(jdbcPassword(), that.jdbcPassword());
     }
 }

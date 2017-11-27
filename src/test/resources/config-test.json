@@ -1,5 +1,6 @@
 {
   "port": 5555,
   "jdbcUrl": "jdbc:postgresql://localhost:5432/houseofcars-test",
+  "jdbcUser": "houseofcars-test",
   "jdbcPassword": "h-brs"
 }
