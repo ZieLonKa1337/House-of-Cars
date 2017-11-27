@@ -1,5 +1,7 @@
 package de.codazz.houseofcars;
 
+import de.codazz.houseofcars.domain.Spot;
+
 import javax.persistence.EntityManager;
 import java.io.Closeable;
 import java.io.IOException;
@@ -11,7 +13,10 @@ public interface Garage extends Runnable, Closeable {
 
     int numTotal();
     int numUsed();
-    int numFree();
+
+    default int numFree() {
+        return numTotal() - numUsed();
+    }
 
     Optional<Spot> nextFree();
 

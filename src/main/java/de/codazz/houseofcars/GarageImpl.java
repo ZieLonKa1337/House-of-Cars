@@ -1,5 +1,6 @@
 package de.codazz.houseofcars;
 
+import de.codazz.houseofcars.domain.Spot;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import spark.ModelAndView;
@@ -25,7 +26,7 @@ public class GarageImpl implements Garage {
     private final Config config;
     private final EntityManager entityManager;
 
-    private final TypedQuery<? extends Number> numTotal, numUsed = null, numFree = null;
+    private final TypedQuery<? extends Number> numTotal, numUsed;
     private final TypedQuery<Spot> nextFree = null;
 
     public GarageImpl() {
@@ -59,8 +60,7 @@ public class GarageImpl implements Garage {
 
         // build queries
         numTotal = entityManager.createQuery("SELECT COUNT(s) FROM Spot s", Long.class);
-//        numUsed = entityManager.createQuery("SELECT COUNT(s) FROM Spot s WHERE ", Long.class); // TODO
-//        numFree = entityManager.createQuery("SELECT COUNT(s) FROM Spot s WHERE ", Long.class); // TODO
+        numUsed = entityManager.createQuery("SELECT COUNT(p) FROM Parking p", Long.class);
 //        nextFree = entityManager.createQuery("SELECT s FROM Spot s WHERE ", Spot.class); // TODO
     }
 
@@ -80,11 +80,6 @@ public class GarageImpl implements Garage {
     }
 
     @Override
-    public int numFree() {
-        return numFree.getSingleResult().intValue();
-    }
-
-    @Override
     public Optional<Spot> nextFree() {
         return Optional.ofNullable(nextFree.getSingleResult());
     }
@@ -99,8 +94,8 @@ public class GarageImpl implements Garage {
             @Override
             public ModelAndView handle(final Request request, final Response response) throws Exception {
                 templateValues.put("numTotal", numTotal());
-//                templateValues.put("numUsed", numUsed()); // TODO
-//                templateValues.put("numFree", numFree()); // TODO
+                templateValues.put("numUsed", numUsed());
+                templateValues.put("numFree", numFree());
                 return modelAndView;
             }
         }, new MustacheTemplateEngine());

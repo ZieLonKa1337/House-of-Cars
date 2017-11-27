@@ -9,7 +9,7 @@ import java.time.Instant;
 import static org.junit.Assert.assertEquals;
 
 /** @author rstumm2s */
-public class PricingImplTest {
+public class PricingTest {
     Pricing pricing;
 
     @Before
