@@ -9,6 +9,7 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -16,7 +17,6 @@ import java.util.Properties;
 /** @author rstumm2s */
 public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
     private final String persistenceUnitName, persistenceProviderClassName;
-    private final Properties properties = new Properties();
 
     public PerstistenceUnitInfoImpl(final String persistenceUnitName, final String persistenceProviderClassName) {
         this.persistenceUnitName = persistenceUnitName;
@@ -50,11 +50,13 @@ public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
 
     @Override
     public List<String> getMappingFileNames() {
-        return Collections.emptyList();
+        return null;
     }
 
     @Override
     public List<URL> getJarFileUrls() {
+        // only works if running from an exploded JAR
+        // so we still have to list entities in getManagedClassNames()
         try {
             return Collections.list(getClass().getClassLoader().getResources(""));
         } catch (final IOException e) {
@@ -69,7 +71,11 @@ public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
 
     @Override
     public List<String> getManagedClassNames() {
-        return Collections.emptyList();
+        final List<String> classes = new ArrayList<>();
+        classes.add("de.codazz.houseofcars.domain.Spot");
+        classes.add("de.codazz.houseofcars.domain.LicensePlate");
+        classes.add("de.codazz.houseofcars.domain.Parking");
+        return Collections.unmodifiableList(classes);
     }
 
     @Override
@@ -89,7 +95,7 @@ public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
 
     @Override
     public Properties getProperties() {
-        return properties;
+        return null;
     }
 
     @Override
@@ -103,8 +109,7 @@ public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
     }
 
     @Override
-    public void addTransformer(final ClassTransformer transformer) {
-    }
+    public void addTransformer(final ClassTransformer transformer) {}
 
     @Override
     public ClassLoader getNewTempClassLoader() {
