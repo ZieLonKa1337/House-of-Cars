@@ -6,6 +6,7 @@ import org.hibernate.jpa.HibernatePersistenceProvider;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
+import spark.TemplateEngine;
 import spark.TemplateViewRoute;
 import spark.template.mustache.MustacheTemplateEngine;
 
@@ -26,7 +27,11 @@ public class GarageImpl implements Garage {
     private final Config config;
     private final EntityManager entityManager;
 
-    private final TypedQuery<? extends Number> numTotal, numUsed, numUsed_type, numTotal_type;
+    private final TypedQuery<? extends Number>
+            numTotal, numTotal_type,
+            numVehicles,
+            numUsed, numUsed_type,
+            numParking;
     private final TypedQuery<Spot> nextFree;
 
     public GarageImpl() {
@@ -61,8 +66,10 @@ public class GarageImpl implements Garage {
         // build queries
         numTotal = entityManager.createQuery("SELECT COUNT(s) FROM Spot s", Long.class);
         numTotal_type = entityManager.createQuery("SELECT COUNT(s) FROM Spot s WHERE s.type = :type", Long.class);
-        numUsed = entityManager.createQuery("SELECT COUNT(p) FROM Parking p", Long.class);
-        numUsed_type = entityManager.createQuery("SELECT COUNT(p) FROM Parking p WHERE p.spot.type = :type", Long.class);
+        numUsed = entityManager.createQuery("SELECT COUNT(p) FROM Parking p WHERE p.finished IS NULL AND p.spot IS NOT NULL", Long.class);
+        numUsed_type = entityManager.createQuery("SELECT COUNT(p) FROM Parking p WHERE p.finished IS NULL AND p.spot.type = :type", Long.class);
+        numParking = entityManager.createQuery("SELECT COUNT(p) FROM Parking p WHERE p.parked IS NULL", Long.class);
+        numVehicles = entityManager.createQuery("SELECT COUNT(v) FROM Vehicle v WHERE v.present = TRUE", Long.class);
         nextFree = entityManager.createQuery("SELECT s FROM Spot s WHERE s.type = :type AND s NOT IN (SELECT DISTINCT p.spot FROM Parking p WHERE p.spot IS NOT NULL)", Spot.class)
                 .setMaxResults(1);
     }
@@ -95,6 +102,16 @@ public class GarageImpl implements Garage {
     }
 
     @Override
+    public int numParking() {
+        return numParking.getSingleResult().intValue();
+    }
+
+    @Override
+    public int numVehicles() {
+        return numVehicles.getSingleResult().intValue();
+    }
+
+    @Override
     public Optional<Spot> nextFree(final Spot.Type type) {
         nextFree.setParameter("type", type);
         return nextFree.getResultStream().findFirst();
@@ -103,6 +120,9 @@ public class GarageImpl implements Garage {
     @Override
     public void run() {
         port(config.port());
+        staticFiles.location("/static");
+
+        final TemplateEngine templateEngine = new MustacheTemplateEngine();
         get("/", new TemplateViewRoute() {
             final Map<String, Object> templateValues = new HashMap<>();
             final ModelAndView modelAndView = modelAndView(templateValues, "index.html.mustache");
@@ -112,9 +132,13 @@ public class GarageImpl implements Garage {
                 templateValues.put("numTotal", numTotal());
                 templateValues.put("numUsed", numUsed());
                 templateValues.put("numFree", numFree());
+                templateValues.put("numVehicles", numVehicles());
+                templateValues.put("numPending", numPending());
+                templateValues.put("numParking", numParking());
+                templateValues.put("numLeaving", numLeaving());
                 return modelAndView;
             }
-        }, new MustacheTemplateEngine());
+        }, templateEngine);
     }
 
     public static void main(final String[] args) {

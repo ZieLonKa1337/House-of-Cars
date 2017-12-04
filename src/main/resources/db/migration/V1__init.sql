@@ -1,19 +1,13 @@
 create sequence hibernate_sequence start 1 increment 1;
 
-create table LicensePlate (
-	code varchar(255) not null,
-	OPTLOCK int8 not null,
-	primary key (code)
-);
-
 create table Parking (
-	created timestamptz not null,
+	started timestamptz not null,
 	OPTLOCK int8 not null,
 	finished timestamptz,
-	started timestamptz,
-	licensePlate_code varchar(255) not null,
+	parked timestamptz,
 	spot_id int4,
-	primary key (created)
+	vehicle_license varchar(255) not null,
+	primary key (started)
 );
 
 create table Spot (
@@ -23,14 +17,15 @@ create table Spot (
 	primary key (id)
 );
 
-alter table Parking
-	add constraint UK_kawfsygge06ewo6sefwej2e3w unique (licensePlate_code);
-
-alter table Parking
-	add constraint UK_7lw0vq33rsqrdvgq1kqtsu61q unique (spot_id);
-
-alter table Parking
-	add constraint FK3hdgwo6uqbdkbf38bor3ifmc3 foreign key (licensePlate_code)references LicensePlate;
+create table Vehicle (
+	license varchar(255) not null,
+	OPTLOCK int8 not null,
+	present boolean not null,
+	primary key (license)
+);
 
 alter table Parking
 	add constraint FKjouk3ps197dyfof70mrc2vbk4 foreign key (spot_id)references Spot;
+
+alter table Parking
+	add constraint FKsqoybondilp8ma15vuft5e586 foreign key (vehicle_license)references Vehicle;

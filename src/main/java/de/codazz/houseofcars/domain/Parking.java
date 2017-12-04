@@ -1,39 +1,67 @@
 package de.codazz.houseofcars.domain;
 
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import javax.persistence.Column;
+import javax.persistence.ManyToOne;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
 public class Parking extends Activity {
-    @OneToOne(optional = false)
-    private LicensePlate licensePlate;
+    @ManyToOne(optional = false)
+    private Vehicle vehicle;
 
-    @OneToOne
-    @JoinColumn(unique = true)
+    @ManyToOne
     private Spot spot;
+
+    @Column(columnDefinition = "timestamptz")
+    private ZonedDateTime parked;
 
     /** @deprecated only for JPA */
     @Deprecated
     public Parking() {}
 
-    public Parking(final LicensePlate licensePlate) {
-        super(ZonedDateTime.now());
-        this.licensePlate = licensePlate;
+    public Parking(final Vehicle vehicle) {
+        super(null);
+        this.vehicle = vehicle;
     }
 
-    public LicensePlate licensePlate() {
-        return licensePlate;
+    public Vehicle vehicle() {
+        return vehicle;
     }
 
     public Optional<Spot> spot() {
         return Optional.ofNullable(spot);
     }
 
-    /** @param spot the spot occupied by the driver */
-    public void spot(final Spot spot) {
+    /** @return when the vehicle occupied its spot */
+    public Optional<ZonedDateTime> parked() {
+        return Optional.ofNullable(parked);
+    }
+
+    /** @param spot the spot occupied by the vehicle */
+    public void park(final Spot spot) {
+        if (this.spot != null || parked != null) throw new IllegalStateException();
+        parked = ZonedDateTime.now(clock);
         this.spot = spot;
+    }
+
+    /** @return when the vehicle entered the garage */
+    @Override
+    public Optional<ZonedDateTime> started() {
+        return super.started();
+    }
+
+    /** @return when the vehicle left its spot */
+    @Override
+    public Optional<ZonedDateTime> finished() {
+        return super.finished();
+    }
+
+    /** @throws IllegalStateException if {@link #spot} has not yet been set */
+    @Override
+    public void finish() {
+        if (spot == null) throw new IllegalStateException();
+        super.finish();
     }
 }

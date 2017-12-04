@@ -13,10 +13,10 @@ import java.util.Optional;
 public abstract class Activity extends Entity {
     @Id
     @Column(columnDefinition = "timestamptz", nullable = false)
-    private ZonedDateTime created;
+    private ZonedDateTime started;
 
     @Column(columnDefinition = "timestamptz")
-    private ZonedDateTime started, finished;
+    private ZonedDateTime finished;
 
     /** for testing */
     @Transient
@@ -26,9 +26,9 @@ public abstract class Activity extends Entity {
     @Deprecated
     public Activity() {}
 
-    protected Activity(ZonedDateTime created) {
-        if (created == null) created = ZonedDateTime.now(clock);
-        this.created = created;
+    protected Activity(ZonedDateTime started) {
+        if (started == null) started = ZonedDateTime.now(clock);
+        this.started = started;
     }
 
     public Optional<ZonedDateTime> started() {
@@ -37,15 +37,6 @@ public abstract class Activity extends Entity {
 
     public Optional<ZonedDateTime> finished() {
         return Optional.ofNullable(finished);
-    }
-
-    public ZonedDateTime created() {
-        return created;
-    }
-
-    public void start() {
-        if (started != null) throw new IllegalStateException();
-        started = ZonedDateTime.now(clock);
     }
 
     public void finish() {
