@@ -1,9 +1,15 @@
 package de.codazz.houseofcars.domain;
 
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
+@NamedQueries({
+    @NamedQuery(name = "Vehicle.countPresent", query = "SELECT COUNT(v) FROM Vehicle v WHERE v.present = TRUE"),
+    @NamedQuery(name = "Vehicle.mayEnter", query = "SELECT COUNT(v) = 0 FROM Vehicle v WHERE v.license = :license AND v.present = TRUE")
+})
 public class Vehicle extends Entity {
     @Id
     private String license;

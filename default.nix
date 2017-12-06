@@ -6,17 +6,13 @@ let
   buildGradlePackage = (import (pkgs.fetchFromBitbucket {
     owner = "dermetfan";
     repo = "nixpkgs-extras";
-    rev = "afa3a8446f689b89f6139939655cf952930935a4";
-    sha256 = "1w4m11s52wcwxl3zq0c9f132nbx39q4a15v214wmz83g1md7wfrf";
+    rev = "21787267361318e205dea01d452939e88382d011";
+    sha256 = "17k1m0f03lgivp48ggjcj0i5gkjjkr0mak22nh38rxr3zvhx3jxd";
   }) { inherit pkgs; }).buildGradlePackage;
 in buildGradlePackage {
   name = "house-of-cars";
 
   src = ./.;
-
-  buildInputs = with pkgs; [
-    gitMinimal
-  ];
 
   gradleOutputs.out = {
     task = "installDist";

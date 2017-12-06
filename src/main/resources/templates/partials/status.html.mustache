@@ -1,0 +1,50 @@
+<style>
+.status {
+    background: burlywood;
+    border-radius: 1.5cm;
+    border-style: solid;
+    box-shadow: inset 0px 0px 20px 2px black;
+    text-shadow: 0px 0px 20px black;
+    margin: 1cm;
+}
+</style>
+<div class="status">
+    <div>Waiting for update...</div>
+    <script>
+    let _status = (function () {
+        let target = document.currentScript.previousElementSibling;
+
+        let socket;
+        function connect() {
+            socket = new WebSocket('ws://' + window.location.host + '/ws/status');
+            socket.onclose = connect;
+            socket.onmessage = function (msg) {
+                let data = JSON.parse(msg.data);
+                switch (data.type) {
+                    case 'update':
+                        update(data.values);
+                        break;
+                    default:
+                        throw 'unknown message type: ' + data.type;
+                }
+            };
+        };
+        connect();
+
+        function update(values) {
+            target.innerHTML =
+                '<h1>Free: ' + values.numFree.value + '</h1>\n' +
+                {{#spotTypes}}
+                '<h3>{{.}}: ' + values["numFree-{{.}}"].value + '</h3>' +
+                {{/spotTypes}}
+                ''; // end concat
+        };
+
+        return {
+            update: function () {
+                socket.close();
+            }
+        };
+    })();
+    </script>
+</div>

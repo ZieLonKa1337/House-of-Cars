@@ -1,0 +1,76 @@
+<!-- rstumm2s -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>House of Cars Gate</title>
+    <style>
+    body {
+        background: beige;
+        text-align: center;
+    }
+
+    #gate {
+        width: 35%;
+    }
+    </style>
+    <script>
+    let _vgate = (function () {
+        let licenseReader = document.getElementById('license-reader');
+        let gate = document.getElementById('gate');
+
+        let socket;
+        function connect() {
+            socket = new WebSocket('ws://' + window.location.host + '/ws/gate');
+            socket.onclose = connect;
+            socket.onmessage = function (msg) {
+                let data = JSON.parse(msg.data);
+                switch (data.type) {
+                    case 'open-response':
+                        if (!data.permission) return;
+                        state(true);
+
+                        // simulate vehicle driving in
+                        setTimeout(function () {
+                            state(false);
+                            socket.send(JSON.stringify({
+                                type: 'entered',
+                                license: _vgate.requestOpen.license,
+                                simulate: true
+                            }));
+                        }, 1000 + Math.random() * 2000);
+                        break;
+                }
+            };
+        }
+        connect();
+
+        function state(open) {
+            let state = open ? 'open' : 'closed';
+            document.getElementById('gate').src = 'gate-' + state + '.svg';
+            document.getElementById('license-reader').hidden = open;
+        }
+
+        return {
+            requestOpen: function (license) {
+                _vgate.requestOpen.license = license;
+                socket.send(JSON.stringify({
+                    type: 'open-request',
+                    license: license
+                }));
+            }
+        };
+    })();
+    </script>
+</head>
+<body>
+{{>partials/status.html}}
+
+<img id="gate" src="gate-closed.svg" />
+
+<form id="license-reader" action="javascript:void(0);">
+    <input name="license" type="text" />
+    <button onclick="_vgate.requestOpen(document.getElementById('license-reader').license.value)">Enter</button>
+</form>
+</body>
+</html>

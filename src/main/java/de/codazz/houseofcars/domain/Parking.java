@@ -2,11 +2,13 @@ package de.codazz.houseofcars.domain;
 
 import javax.persistence.Column;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQuery;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
+@NamedQuery(name = "Parking.countParking", query = "SELECT COUNT(p) FROM Parking p WHERE p.parked IS NULL AND p.spot IS NULL")
 public class Parking extends Activity {
     @ManyToOne(optional = false)
     private Vehicle vehicle;

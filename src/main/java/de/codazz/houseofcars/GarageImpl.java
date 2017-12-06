@@ -1,8 +1,8 @@
 package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Spot;
-import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.jpa.HibernatePersistenceProvider;
+import de.codazz.houseofcars.websocket.subprotocol.Gate;
+import de.codazz.houseofcars.websocket.subprotocol.Status;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
@@ -10,10 +10,11 @@ import spark.TemplateEngine;
 import spark.TemplateViewRoute;
 import spark.template.mustache.MustacheTemplateEngine;
 
-import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -21,18 +22,31 @@ import java.util.Optional;
 import static spark.Spark.*;
 
 /** @author rstumm2s */
-public class GarageImpl implements Garage {
+public class GarageImpl implements Garage, Closeable {
     private static final String CONFIG_FILE = "house-of-cars.json";
 
-    private final Config config;
-    private final EntityManager entityManager;
+    static GarageImpl instance; {
+        if (instance != null) throw new IllegalStateException();
+        instance = this;
+    }
 
-    private final TypedQuery<? extends Number>
+    public static GarageImpl instance() {
+        return instance;
+    }
+
+    public final Persistence persistence;
+
+    private final Config config;
+
+    private final TypedQuery<Long>
             numTotal, numTotal_type,
             numVehicles,
             numUsed, numUsed_type,
             numParking;
     private final TypedQuery<Spot> nextFree;
+
+    /** whether the {@link spark.Spark spark} has {@link spark.Service#ignite() ignited} */
+    private boolean spark;
 
     public GarageImpl() {
         this(null);
@@ -49,78 +63,69 @@ public class GarageImpl implements Garage {
         }
         this.config = config;
 
-        // connect to persistence database
-        final Map<String, Object> persistenceFactoryProp = new HashMap<>();
-        persistenceFactoryProp.put(AvailableSettings.JPA_JDBC_URL, config.jdbcUrl());
-        persistenceFactoryProp.put(AvailableSettings.JPA_JDBC_DRIVER, "org.postgresql.Driver");
-        persistenceFactoryProp.put(AvailableSettings.JPA_JDBC_USER, config.jdbcUser());
-        persistenceFactoryProp.put(AvailableSettings.JPA_JDBC_PASSWORD, config.jdbcPassword());
-        entityManager = new HibernatePersistenceProvider()
-                .createContainerEntityManagerFactory(
-                        new PerstistenceUnitInfoImpl(
-                                "HouseOfCars",
-                                HibernatePersistenceProvider.class.getName()),
-                        persistenceFactoryProp)
-                .createEntityManager();
+        persistence = new Persistence(config.jdbcUrl(), config.jdbcUser(), config.jdbcPassword());
 
         // build queries
-        numTotal = entityManager.createQuery("SELECT COUNT(s) FROM Spot s", Long.class);
-        numTotal_type = entityManager.createQuery("SELECT COUNT(s) FROM Spot s WHERE s.type = :type", Long.class);
-        numUsed = entityManager.createQuery("SELECT COUNT(p) FROM Parking p WHERE p.finished IS NULL AND p.spot IS NOT NULL", Long.class);
-        numUsed_type = entityManager.createQuery("SELECT COUNT(p) FROM Parking p WHERE p.finished IS NULL AND p.spot.type = :type", Long.class);
-        numParking = entityManager.createQuery("SELECT COUNT(p) FROM Parking p WHERE p.parked IS NULL", Long.class);
-        numVehicles = entityManager.createQuery("SELECT COUNT(v) FROM Vehicle v WHERE v.present = TRUE", Long.class);
-        nextFree = entityManager.createQuery("SELECT s FROM Spot s WHERE s.type = :type AND s NOT IN (SELECT DISTINCT p.spot FROM Parking p WHERE p.spot IS NOT NULL)", Spot.class)
-                .setMaxResults(1);
-    }
-
-    @Override
-    public EntityManager entityManager() {
-        return entityManager;
+        numTotal = persistence.execute(em -> em.createNamedQuery("Spot.count", Long.class));
+        numTotal_type = persistence.execute(em -> em.createNamedQuery("Spot.countType", Long.class));
+        numUsed = persistence.execute(em -> em.createNamedQuery("Spot.countUsed", Long.class));
+        numUsed_type = persistence.execute(em -> em.createNamedQuery("Spot.countUsedType", Long.class));
+        numParking = persistence.execute(em -> em.createNamedQuery("Parking.countParking", Long.class));
+        numVehicles = persistence.execute(em -> em.createNamedQuery("Vehicle.countPresent", Long.class));
+        nextFree = persistence.execute(em -> em.createNamedQuery("Spot.anyFree", Spot.class)
+                .setMaxResults(1));
     }
 
     @Override
     public int numTotal() {
-        return numTotal.getSingleResult().intValue();
+        return persistence.execute(__ -> numTotal.getSingleResult().intValue());
     }
 
     @Override
     public int numTotal(final Spot.Type type) {
-        numTotal_type.setParameter("type", type);
-        return numTotal_type.getSingleResult().intValue();
+        return persistence.execute(__ -> numTotal_type
+                .setParameter("type", type)
+                .getSingleResult().intValue());
     }
 
     @Override
     public int numUsed() {
-        return numUsed.getSingleResult().intValue();
+        return persistence.execute(__ -> numUsed.getSingleResult().intValue());
     }
 
     @Override
     public int numUsed(final Spot.Type type) {
-        numUsed_type.setParameter("type", type);
-        return numUsed_type.getSingleResult().intValue();
+        return persistence.execute(__ -> numUsed_type
+                .setParameter("type", type)
+                .getSingleResult().intValue());
     }
 
     @Override
     public int numParking() {
-        return numParking.getSingleResult().intValue();
+        return persistence.execute(__ -> numParking.getSingleResult().intValue());
     }
 
     @Override
     public int numVehicles() {
-        return numVehicles.getSingleResult().intValue();
+        return persistence.execute(__ -> numVehicles.getSingleResult().intValue());
     }
 
     @Override
     public Optional<Spot> nextFree(final Spot.Type type) {
-        nextFree.setParameter("type", type);
-        return nextFree.getResultStream().findFirst();
+        return persistence.execute(__ -> nextFree
+                .setParameter("type", type)
+                .getResultStream().findFirst());
     }
 
     @Override
     public void run() {
+        spark = true;
+
         port(config.port());
         staticFiles.location("/static");
+
+        webSocket("/ws/status", Status.class);
+        webSocket("/ws/gate", Gate.class);
 
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
         get("/", new TemplateViewRoute() {
@@ -128,7 +133,7 @@ public class GarageImpl implements Garage {
             final ModelAndView modelAndView = modelAndView(templateValues, "index.html.mustache");
 
             @Override
-            public ModelAndView handle(final Request request, final Response response) throws Exception {
+            public ModelAndView handle(final Request request, final Response response) {
                 templateValues.put("numTotal", numTotal());
                 templateValues.put("numUsed", numUsed());
                 templateValues.put("numFree", numFree());
@@ -139,14 +144,33 @@ public class GarageImpl implements Garage {
                 return modelAndView;
             }
         }, templateEngine);
+        get("/vgate", new TemplateViewRoute() {
+            final Map<String, Object> templateValues = new HashMap<>(); {
+                templateValues.put("spotTypes", Arrays.stream(Spot.Type.values()).map(Spot.Type::name).toArray(String[]::new));
+            }
+            final ModelAndView modelAndView = modelAndView(templateValues, "vgate.html.mustache");
+
+            @Override
+            public ModelAndView handle(final Request request, final Response response) {
+                return modelAndView;
+            }
+        }, templateEngine);
+    }
+
+    @Override
+    public void close() {
+        if (spark) {
+            spark = false;
+            stop();
+        }
+        persistence.close();
+
+        if (instance == this) {
+            instance = null;
+        }
     }
 
     public static void main(final String[] args) {
-        new GarageImpl() {
-            @Override
-            protected void finalize() throws Throwable {
-                close();
-            }
-        }.run();
+        new GarageImpl().run();
     }
 }

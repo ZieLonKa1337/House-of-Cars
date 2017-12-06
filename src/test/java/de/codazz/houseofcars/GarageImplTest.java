@@ -1,15 +1,16 @@
 package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.ActivityTestUtil;
-import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.domain.Parking;
 import de.codazz.houseofcars.domain.Spot;
+import de.codazz.houseofcars.domain.Vehicle;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.persistence.EntityManager;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -18,46 +19,53 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
 /** @author rstumm2s */
 public class GarageImplTest {
     static final int NUM_TOTAL = 100;
-    static final Map<Spot.Type, Integer> NUM_SPOTS = new HashMap<>(); static {
-        NUM_SPOTS.put(Spot.Type.BIKE, NUM_TOTAL / 10);
-        NUM_SPOTS.put(Spot.Type.HANDICAP, NUM_TOTAL / 6);
-        NUM_SPOTS.put(Spot.Type.CAR, NUM_TOTAL - NUM_SPOTS.get(Spot.Type.BIKE) - NUM_SPOTS.get(Spot.Type.HANDICAP));
+    static final Map<Spot.Type, Integer> NUM_SPOTS; static {
+        final Map<Spot.Type, Integer> spots = new HashMap<>();
+        spots.put(Spot.Type.BIKE, NUM_TOTAL / 10);
+        spots.put(Spot.Type.HANDICAP, NUM_TOTAL / 6);
+        spots.put(Spot.Type.CAR, NUM_TOTAL - spots.get(Spot.Type.BIKE) - spots.get(Spot.Type.HANDICAP));
+        NUM_SPOTS = Collections.unmodifiableMap(spots);
     }
 
-    static Clock clock = Clock.systemDefaultZone();
-    static Garage garage;
-    static List<Spot> spots = new ArrayList<>(NUM_TOTAL);
-
-    @BeforeClass
-    public static void setUpClass() throws IOException {
-        garage = new GarageImpl(ConfigImpl.load(new FileInputStream(ConfigImplTest.CONFIG)));
-    }
+    Clock clock = Clock.systemDefaultZone();
+    GarageImpl garage;
+    final List<Spot> spots = new ArrayList<>(NUM_TOTAL);
 
     @Before
-    public void setUp() {
-        final EntityManager em = garage.entityManager();
-        em.getTransaction().begin();
-        // clear
-        em.createQuery("DELETE FROM Parking").executeUpdate();
-        em.createQuery("DELETE FROM Vehicle").executeUpdate();
-        em.createQuery("DELETE FROM Spot").executeUpdate();
-        em.clear();
-        // create spots
-        spots.clear();
-        for (int i = 0; i < NUM_TOTAL; i++) {
-            final Spot spot = new Spot(i < NUM_SPOTS.get(Spot.Type.BIKE) ? Spot.Type.BIKE :
-                    i < NUM_SPOTS.get(Spot.Type.BIKE) + NUM_SPOTS.get(Spot.Type.HANDICAP) ? Spot.Type.HANDICAP :
-                    Spot.Type.CAR);
-            spots.add(spot);
-            em.persist(spot);
-        }
-        em.getTransaction().commit();
+    public void setUp() throws FileNotFoundException {
+        garage = new GarageImpl(ConfigImpl.load(new FileInputStream(ConfigImplTest.CONFIG)));
+        garage.persistence.executor = new ExecutorServiceMock();
+        garage.persistence.<Void>transact((em, __) -> {
+            // clear
+            for (String clazz : new PerstistenceUnitInfoImpl(null, null).getManagedClassNames()) {
+                clazz = clazz.substring(clazz.lastIndexOf('.') + 1);
+                em.createQuery("DELETE FROM " + clazz).executeUpdate();
+            }
+            em.clear();
+            // create spots
+            spots.clear();
+            for (int i = 0; i < NUM_TOTAL; i++) {
+                final Spot spot = new Spot(i < NUM_SPOTS.get(Spot.Type.BIKE) ? Spot.Type.BIKE :
+                        i < NUM_SPOTS.get(Spot.Type.BIKE) + NUM_SPOTS.get(Spot.Type.HANDICAP) ? Spot.Type.HANDICAP :
+                        Spot.Type.CAR);
+                spots.add(spot);
+                em.persist(spot);
+            }
+            return null;
+        });
+    }
+
+    @After
+    public void tearDown() {
+        garage.close();
     }
 
     @Test
@@ -130,14 +138,13 @@ public class GarageImplTest {
         for (final Spot.Type type : Spot.Type.values()) {
             final int num = NUM_SPOTS.get(type) / 3;
 
-            garage.entityManager().getTransaction().begin();
-            for (int i = 0; i < num; i++) {
-                final Parking parking = parkings.remove(parkings.size() - 1);
-                parking.park(garage.nextFree(type).orElseThrow(() -> new IllegalStateException("likely bug in test code")));
-                garage.entityManager().persist(parking);
-            }
-            garage.entityManager().getTransaction().commit();
-            parked += num;
+            parked += garage.persistence.transact((em, __) -> {
+                for (int i = 0; i < num; i++) {
+                    final Parking parking = parkings.remove(parkings.size() - 1);
+                    parking.park(garage.nextFree(type).orElseThrow(() -> new IllegalStateException("likely bug in test code")));
+                }
+                return num;
+            });
             assertEquals(total - parked, garage.numParking());
         }
     }
@@ -184,16 +191,15 @@ public class GarageImplTest {
         for (final Spot.Type type : Spot.Type.values()) {
             final int numTotal = NUM_SPOTS.get(type), num = numTotal / divisor;
 
-            garage.entityManager().getTransaction().begin();
-            for (int i = 0; i < num; i++) {
-                final Parking parking = parkings.remove(parkings.size() - 1);
-                ActivityTestUtil.clock(parking, tick());
-                parking.park(garage.nextFree(type).orElseThrow(() -> new IllegalStateException("likely bug in test code")));
-                parkingsParked.add(parking);
-                garage.entityManager().persist(parking);
-            }
-            garage.entityManager().getTransaction().commit();
-            parked += num;
+            parked += garage.persistence.transact((em, __) -> {
+                for (int i = 0; i < num; i++) {
+                    final Parking parking = parkings.remove(parkings.size() - 1);
+                    ActivityTestUtil.clock(parking, tick());
+                    parking.park(garage.nextFree(type).orElseThrow(() -> new IllegalStateException("likely bug in test code")));
+                    parkingsParked.add(parking);
+                }
+                return num;
+            });
 
             checkState(NUM_TOTAL, NUM_TOTAL - parked, parked, total - parked, total - parked, 0, total);
             checkState(type, numTotal, numTotal - num, num, divisor != 1);
@@ -205,19 +211,18 @@ public class GarageImplTest {
         for (final Spot.Type type : Spot.Type.values()) {
             final int numTotal = NUM_SPOTS.get(type), num = numTotal / divisor;
 
-            garage.entityManager().getTransaction().begin();
-            for (int i = 0; i < num; i++) {
-                final Parking parking = parkingsParked.stream()
-                        .filter(x -> x.spot().get().type() == type)
-                        .findFirst().get();
-                parkingsParked.remove(parking);
-                ActivityTestUtil.clock(parking, tick());
-                parking.finish();
-                parkingsFinished.add(parking);
-                garage.entityManager().persist(parking);
-            }
-            garage.entityManager().getTransaction().commit();
-            finished += num;
+            finished += garage.persistence.transact((em, __) -> {
+                for (int i = 0; i < num; i++) {
+                    final Parking parking = parkingsParked.stream()
+                            .filter(x -> x.spot().get().type() == type)
+                            .findFirst().get();
+                    parkingsParked.remove(parking);
+                    ActivityTestUtil.clock(parking, tick());
+                    parking.finish();
+                    parkingsFinished.add(parking);
+                }
+                return num;
+            });
 
             checkState(NUM_TOTAL, NUM_TOTAL - parked + finished, parked - finished, finished, 0, finished, total);
             checkState(type, numTotal, numTotal, 0, numTotal > 0 && divisor != 1);
@@ -228,12 +233,10 @@ public class GarageImplTest {
         assert parkingsFinished.size() == finished;
 
         // leave garage
-        garage.entityManager().getTransaction().begin();
-        parkingsFinished.forEach(parking -> {
-            parking.vehicle().present(false);
-            garage.entityManager().persist(parking);
+        garage.persistence.<Void>transact((em, __) -> {
+            parkingsFinished.forEach(it -> it.vehicle().present(false));
+            return null;
         });
-        garage.entityManager().getTransaction().commit();
         checkState(NUM_TOTAL, NUM_TOTAL, 0, 0, 0, 0, 0);
         for (final Spot.Type type : Spot.Type.values()) {
             final int num = NUM_SPOTS.get(type);
@@ -241,7 +244,7 @@ public class GarageImplTest {
         }
     }
 
-    private static void checkState(
+    private void checkState(
             final int numTotal,
             final int numFree,
             final int numUsed,
@@ -258,7 +261,7 @@ public class GarageImplTest {
         assertEquals(numVehicles, garage.numVehicles());
     }
 
-    private static void checkState(
+    private void checkState(
             final Spot.Type type,
             final int numTotal,
             final int numFree,
@@ -270,52 +273,51 @@ public class GarageImplTest {
         assertSame(nextFree, garage.nextFree(type).isPresent());
     }
 
-    private static Parking[] park(final Spot.Type type, int n) {
+    private Parking[] park(final Spot.Type type, int n) {
         return park(type, true, false, n);
     }
 
-    private static Parking[] park(final Spot.Type type, final boolean park, final boolean leave, int n) {
+    private Parking[] park(final Spot.Type type, final boolean park, final boolean leave, int n) {
         assert park || !leave : "cannot leave without parking first";
-
-        final EntityManager em = garage.entityManager();
 
         final Parking[] parkings = new Parking[n];
         for (n -= 1; n >= 0; n--) {
-            em.getTransaction().begin();
-
-            final int numPlates = em.createQuery("SELECT COUNT(v) FROM Vehicle v", Long.class).getSingleResult().intValue();
-            final String license = String.format("AABB%04d", numPlates);
-            final Vehicle vehicle; {
-                Vehicle v = em.find(Vehicle.class, license);
-                if (v == null) {
-                    v = new Vehicle(license);
+            final int finalN = n;
+            garage.persistence.<Void>transact((em, __) -> {
+                final int numPlates = em.createQuery("SELECT COUNT(v) FROM Vehicle v", Long.class).getSingleResult().intValue();
+                final String license = String.format("AABB%04d", numPlates);
+                final Vehicle vehicle; {
+                    Vehicle v = em.find(Vehicle.class, license);
+                    if (v == null) {
+                        v = new Vehicle(license);
+                        em.persist(v);
+                    }
+                    v.present(true);
+                    vehicle = v;
                 }
-                v.present(true);
-                vehicle = v;
-                em.persist(vehicle);
-            }
 
-            final Parking parking = new Parking(vehicle);
-            final Spot spot = spots.stream().filter(s -> s.type() == type).findFirst().orElseThrow(() -> new IllegalStateException("likely bug in test code"));
-            spots.remove(spot);
-            if (park) {
-                ActivityTestUtil.clock(parking, tick());
-                parking.park(spot);
-                if (leave) {
+                final Parking parking = new Parking(vehicle);
+                final Spot spot = spots.stream().filter(s -> s.type() == type).findFirst().orElseThrow(() -> new IllegalStateException("likely bug in test code"));
+                spots.remove(spot);
+                if (park) {
                     ActivityTestUtil.clock(parking, tick());
-                    parking.finish();
+                    parking.park(spot);
+                    if (leave) {
+                        ActivityTestUtil.clock(parking, tick());
+                        parking.finish();
+                    }
                 }
-            }
-            em.persist(parking);
+                em.persist(parking);
+                parkings[finalN] = parking;
 
-            em.getTransaction().commit();
-            parkings[n] = parking;
+                return null;
+            });
         }
 
         return parkings;
     }
 
-    private static Clock tick() {
+    private Clock tick() {
         return clock = Clock.offset(clock, Duration.ofMinutes(5));
     }
 }

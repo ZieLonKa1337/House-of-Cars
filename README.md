@@ -36,3 +36,7 @@ Ablauf:
 1. Als Inhaber möchte ich eine Übersicht über den aktuellen Status des Parkhauses, um mir einen Eindruck verschaffen zu können.
 1. Als Inhaber möchte ich eine Auswertung der Statistiken, um zu sehen, ob mein Parkhaus profitabel ist.
 1. Als Hausmeister benötige ich Informationen über die geparkten Autos, um Überzieher abschleppen zu können.
+
+## Setup
+
+Some tests require a PostgreSQL server to be prepared and running according to the JDBC settings in `config-test.json`.

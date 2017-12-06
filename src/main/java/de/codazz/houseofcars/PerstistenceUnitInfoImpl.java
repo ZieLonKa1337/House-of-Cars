@@ -72,9 +72,9 @@ public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
     @Override
     public List<String> getManagedClassNames() {
         final List<String> classes = new ArrayList<>();
-        classes.add("de.codazz.houseofcars.domain.Spot");
-        classes.add("de.codazz.houseofcars.domain.LicensePlate");
         classes.add("de.codazz.houseofcars.domain.Parking");
+        classes.add("de.codazz.houseofcars.domain.Spot");
+        classes.add("de.codazz.houseofcars.domain.Vehicle");
         return Collections.unmodifiableList(classes);
     }
 

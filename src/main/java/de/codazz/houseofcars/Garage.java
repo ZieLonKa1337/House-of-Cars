@@ -2,15 +2,11 @@ package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Spot;
 
-import javax.persistence.EntityManager;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Optional;
 
 /** @author rstumm2s */
-public interface Garage extends Runnable, Closeable {
-    EntityManager entityManager();
-
+public interface Garage extends Runnable {
     /** @return the total number of spots */
     int numTotal();
     int numTotal(Spot.Type type);
@@ -44,9 +40,4 @@ public interface Garage extends Runnable, Closeable {
     int numVehicles();
 
     Optional<Spot> nextFree(Spot.Type type);
-
-    @Override
-    default void close() throws IOException {
-        entityManager().close();
-    }
 }
