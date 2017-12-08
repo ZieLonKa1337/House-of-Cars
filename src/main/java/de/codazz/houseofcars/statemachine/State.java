@@ -1,5 +1,6 @@
 package de.codazz.houseofcars.statemachine;
 
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -7,6 +8,7 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /** @author rstumm2s */
+@Inherited // for RootStateMachine
 @Target(TYPE)
 @Retention(RUNTIME)
 public @interface State {
@@ -22,7 +24,7 @@ public @interface State {
     boolean end() default false;
 
     /** A state can take an instance of this class, given to the state machine on
-     * {@link StateMachine#StateMachine(Class, boolean, Object) construction},
+     * {@link StateMachine#StateMachine(Class, boolean, Object, int) construction},
      * into its one-arg constructor. It is an error to declare a remote
      * without implementing a constructor taking only an object of this class.
      * @return the required remote class */

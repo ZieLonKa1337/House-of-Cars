@@ -14,7 +14,7 @@ import java.util.Optional;
  * and {@link EventHandler event} responses for Mealy.
  * @author rstumm2s */
 public class StateMachine<Event, Response, Remote> implements EventHandler<Event, Optional<Response>> {
-    private final Map<Class<?>, StateHandler<?>> stateHandlers = new HashMap<>();
+    private final Map<Class<?>, StateHandler<?>> stateHandlers;
     /** the current state */
     private Class<?> state;
 
@@ -29,15 +29,29 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
     }
 
     public StateMachine(final Class<?> root, final boolean lazy) throws StateMachineException {
-        this(root, lazy, null);
+        this(root, lazy, null, 16);
     }
 
-    /** @param lazy If {@code true}, state initialization and validation are delayed until a state is first entered.
-     * @param remote Will be passed into the constructor of every state that takes a {@link State#remote() remote}. Make sure they match! */
-    public StateMachine(final Class<?> root, final boolean lazy, final Remote remote) throws StateMachineException {
+    /** <strong>How to create a {@link StateMachine} class that is its own root {@link State}:</strong>
+     * <p>
+     * Add a no-arg constructor for use as state that combines {@code lazy = true} and {@code capacity = -1}.
+     * Since the state machine is lazy, nothing is done on instantiation. The special value {@code -1} means
+     * that the collection holding states will not be created. This makes the instance unusable as state machine
+     * but instantiation trivial and fast. Be sure <strong>not</strong> to call the no-arg constructor yourself!
+     * </p>
+     * @param lazy
+     *      If {@code true}, state initialization and validation are delayed until a state is first entered.<br/>
+     *      Can be used to write a class that is both a {@link StateMachine} and a {@link State}. The no-arg constructor will be
+     * @param remote Will be passed into the constructor of every state that takes a {@link State#remote() remote}. Make sure they match!
+     * @param capacity The initial capacity of the collection in which states are held. Set to the known count of states to avoid rehashes.<br/>
+     *      {@code -1} to use this instance as {@link State}, see above.
+     * @see RootStateMachine */
+    public StateMachine(final Class<?> root, final boolean lazy, final Remote remote, final int capacity) throws StateMachineException {
         this.state = this.root = root;
         this.lazy = lazy;
         this.remote = remote;
+
+        stateHandlers = capacity == -1 ? null : new HashMap<>(capacity, 1);
 
         if (!lazy) {
             instantiate();
