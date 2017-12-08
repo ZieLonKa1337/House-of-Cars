@@ -7,20 +7,45 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
-import java.util.Collection;
 
 /** @author rstumm2s */
 @RunWith(Parameterized.class)
 public class StateMachineTest extends AbstractStateMachineTest<Object, Object, Object> {
     @Parameterized.Parameters
     public static Iterable data() {
+        @State(end = true)
+        class LocalSub1 {
+            public LocalSub1() {}
+        }
+
+        @State(root = true)
+        @OnEvent(value = Object.class, next = LocalSub1.class)
+        class LocalRoot1 {
+            public LocalRoot1() {}
+        }
+
+        @State
+        @OnEvent(value = Object.class, next = LocalRoot2.Sub1.class)
+        class LocalRoot2 {
+            public LocalRoot2() {}
+
+            @State(end = true)
+            class Sub1 {
+                public Sub1() {}
+            }
+        }
+
         return Arrays.asList(new Object[][]{
             {Root1.class, false}, {Root1.class, true},
             {Root2.class, false}, {Root2.class, true},
             {Root3.class, false}, {Root3.class, true},
             {Root4.class, false}, {Root4.class, true},
             {Root5.class, false}, {Root5.class, true},
-            {Root6.class, false}, {Root6.class, true}
+            {Root6.class, false}, {Root6.class, true},
+            {Root7.class, false}, {Root7.class, true},
+            {Root8.class, false}, {Root8.class, true},
+            {LocalRoot1.class, false}, {LocalRoot1.class, true},
+            {LocalRoot2.class, false}, {LocalRoot2.class, true}
         });
     }
 
@@ -36,7 +61,8 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
         if (!lazy && (
             root.equals(Root1.class) ||
             root.equals(Root4.class) ||
-            root.equals(Root6.class)
+            root.equals(Root6.class) ||
+            root.equals(Root8.class)
         )) {
             thrown.expect(StateMachineException.class);
         }
@@ -45,9 +71,11 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
 
     @Test
     public void start() throws StateMachineException {
+        final Class<?> root = machine().rootClass();
         if (lazy && (
-            machine().rootClass().equals(Root1.class) ||
-            machine().rootClass().equals(Root6.class)
+            root.equals(Root1.class) ||
+            root.equals(Root6.class) ||
+            root.equals(Root8.class)
         )) {
             thrown.expect(StateMachineException.class);
         }
@@ -86,6 +114,23 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
         @OnEvent(value = Object.class, next = Sub2.class)
     })
     public static class Root6 {}
+
+    @State
+    @OnEvents({
+        @OnEvent(value = Object.class,  next = Root7.StaticMemberSub.class),
+        @OnEvent(value = String.class,  next = Root7.MemberSub.class)
+    })
+    public static class Root7 {
+        @State(end = true)
+        public static class StaticMemberSub {}
+
+        @State(end = true)
+        public class MemberSub {}
+    }
+
+    /** invalid: enclosing instance is not a state */
+    @State(end = true)
+    public class Root8 {}
 
     @State
     public static class Sub1 {

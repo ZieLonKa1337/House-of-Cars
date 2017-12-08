@@ -3,6 +3,7 @@ package de.codazz.houseofcars.statemachine;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,9 +41,8 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
      * that the collection holding states will not be created. This makes the instance unusable as state machine
      * but instantiation trivial and fast. Be sure <strong>not</strong> to call the no-arg constructor yourself!
      * </p>
-     * @param lazy
-     *      If {@code true}, state initialization and validation are delayed until a state is first entered.<br/>
-     *      Can be used to write a class that is both a {@link StateMachine} and a {@link State}. The no-arg constructor will be
+     * @param lazy If {@code true}, state initialization and validation are delayed until a state is first entered.
+     *      Can be used to write a class that is both a {@link StateMachine} and a {@link State}.
      * @param remote Will be passed into the constructor of every state that takes a {@link State#remote() remote}. Make sure they match!
      * @param capacity The initial capacity of the collection in which states are held. Set to the known count of states to avoid rehashes.<br/>
      *      {@code -1} to use this instance as {@link State}, see above.
@@ -192,18 +192,37 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
         private StateHandler(final Class<T> state) throws StateMachineException {
             meta = meta(state);
 
+            final boolean isInstanceMember = state.isMemberClass() && !Modifier.isStatic(state.getModifiers());
+            final Object enclosingState;
+            if (isInstanceMember) {
+                final StateHandler enclosingHandler = stateHandlers.get(state.getEnclosingClass());
+                if (enclosingHandler == null)
+                    throw new StateMachineException("state " + name(state) + " is a non-static member class but its enclosing state has not yet been instantiated in this state machine");
+                enclosingState = enclosingHandler.state;
+            } else {
+                enclosingState = null;
+            }
+
             final Constructor<T> constructor;
             if (meta.remote() != void.class) {
                 if (!remote.getClass().isAssignableFrom(meta.remote()))
                     throw new StateMachineException("remote for state " + name(state) + " must be " + meta.remote());
                 try {
-                    constructor = state.getConstructor(meta.remote());
+                    if (isInstanceMember) {
+                        constructor = state.getConstructor(state.getEnclosingClass(), meta.remote());
+                    } else{
+                        constructor = state.getConstructor(meta.remote());
+                    }
                 } catch (final NoSuchMethodException | NullPointerException e) {
                     throw new StateMachineException("remote required for state " + name(state), e);
                 }
             } else {
                 try {
-                    constructor = state.getConstructor();
+                    if (isInstanceMember) {
+                        constructor = state.getConstructor(state.getEnclosingClass());
+                    } else {
+                        constructor = state.getConstructor();
+                    }
                 } catch (final NoSuchMethodException e) {
                     throw new StateMachineException("no-arg constructor required for state without remote: " + name(state), e);
                 }
@@ -272,10 +291,18 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
                 T instance;
 
                 try {
-                    if (meta.remote() != void.class) {
-                        instance = constructor.newInstance(remote);
+                    if (isInstanceMember) {
+                        if (meta.remote() != void.class) {
+                            instance = constructor.newInstance(enclosingState, remote);
+                        } else {
+                            instance = constructor.newInstance(enclosingState);
+                        }
                     } else {
-                        instance = constructor.newInstance();
+                        if (meta.remote() != void.class) {
+                            instance = constructor.newInstance(remote);
+                        } else {
+                            instance = constructor.newInstance();
+                        }
                     }
                 } catch (final InstantiationException | IllegalAccessException | InvocationTargetException e) {
                     throw new StateMachineException("failed to instantiate state " + name(state), e);
