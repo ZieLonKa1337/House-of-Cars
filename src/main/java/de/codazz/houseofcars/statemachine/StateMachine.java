@@ -197,9 +197,19 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
             }
             // (state instantiation after all checks)
 
+            onEvent = new HashMap<>();
+            class EventMapper {
+                void map(final OnEvent meta, final Method action) throws StateMachineException {
+                    if (onEvent.containsKey(meta.value()))
+                        throw new StateMachineException("Event " + meta.value() + " already mapped. Only one handler per event is permitted.");
+                    onEvent.put(meta.value(), new EventHandler(action, meta.next()));
+                }
+            }
+            final EventMapper eventMapper = new EventMapper();
+
             {
                 Method onEnter = null, onExit = null;
-                onEvent = new HashMap<>();
+
                 for (final Method method : state.getMethods()) {
                     if (method.isAnnotationPresent(OnEnter.class)) {
                         if (onEnter != null) throw new StateMachineException("only one onEnter per State is permitted");
@@ -209,17 +219,31 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
                     } else if (method.isAnnotationPresent(OnExit.class)) {
                         if (onExit != null) throw new StateMachineException("only one onExit per State is permitted");
                         onExit = method;
-                    } else if (method.isAnnotationPresent(OnEvent.class)) {
-                        final OnEvent annotation = method.getAnnotation(OnEvent.class);
-                        if (onEvent.containsKey(annotation.value()))
-                            throw new StateMachineException("only one handler per event is permitted");
-                        onEvent.put(annotation.value(), new EventHandler(method, annotation.next()));
-                    } else if (method.isAnnotationPresent(OnEvents.class)) {
-                        final OnEvents annotation = method.getAnnotation(OnEvents.class);
-                        for (final OnEvent it : annotation.value()) {
-                            if (onEvent.containsKey(it.value()))
-                                throw new StateMachineException("only one handler per event is permitted");
-                            onEvent.put(it.value(), new EventHandler(method, it.next()));
+                    }
+
+                    final OnEvent metaOnEvent = method.getAnnotation(OnEvent.class);
+                    if (metaOnEvent != null) {
+                        eventMapper.map(metaOnEvent, method);
+                    }
+
+                    final OnEvents metaOnEvents = method.getAnnotation(OnEvents.class);
+                    if (metaOnEvents != null) {
+                        for (final OnEvent it : metaOnEvents.value()) {
+                            eventMapper.map(it, method);
+                        }
+                    }
+                }
+
+                {
+                    final OnEvent metaOnEvent = state.getAnnotation(OnEvent.class);
+                    if (metaOnEvent != null) {
+                        eventMapper.map(metaOnEvent, null);
+                    }
+
+                    final OnEvents metaOnEvents = state.getAnnotation(OnEvents.class);
+                    if (metaOnEvents != null) {
+                        for (final OnEvent it : metaOnEvents.value()) {
+                            eventMapper.map(it, null);
                         }
                     }
                 }
@@ -312,6 +336,7 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
             @SuppressWarnings("unchecked")
             @Override
             public Response onEvent(final Event event) throws StateMachineException {
+                if (action == null) return null;
                 try {
                     return (Response) action.invoke(state, event);
                 } catch (final IllegalAccessException e) {

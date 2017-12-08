@@ -1,5 +1,6 @@
 package de.codazz.houseofcars.statemachine;
 
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -17,6 +18,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * The return value is returned from {@link StateMachine#onEvent(Object)}.
  * </p>
  * @author rstumm2s */
+@Inherited
 @Target({TYPE, METHOD})
 @Retention(RUNTIME)
 public @interface OnEvent {

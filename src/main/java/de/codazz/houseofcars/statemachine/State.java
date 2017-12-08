@@ -8,7 +8,7 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /** @author rstumm2s */
-@Inherited // for RootStateMachine
+@Inherited
 @Target(TYPE)
 @Retention(RUNTIME)
 public @interface State {
