@@ -13,9 +13,9 @@ import static org.junit.Assert.assertTrue;
 
 /** @author rstumm2s */
 @RunWith(Parameterized.class)
-public class RootStateMachineTest extends AbstractStateMachineTest {
+public class RootStateMachineTest<Event, Response, Remote> extends AbstractStateMachineTest<Event,Response, Remote> {
     @Parameterized.Parameters
-    public static Collection data() {
+    public static Iterable data() {
         return Arrays.asList(new Object[][]{
                 {TestRootStateMachine1.class, false}, {TestRootStateMachine1.class, true},
                 {TestRootStateMachine2.class, false}, {TestRootStateMachine2.class, true},
@@ -24,7 +24,7 @@ public class RootStateMachineTest extends AbstractStateMachineTest {
     }
 
     public RootStateMachineTest(final Class root, final boolean lazy) {
-        super(root, lazy);
+        super(root, lazy, null);
     }
 
     @SuppressWarnings("unchecked")
@@ -53,7 +53,7 @@ public class RootStateMachineTest extends AbstractStateMachineTest {
         }
     }
 
-    public static abstract class TestRootStateMachine<Event, Response, Result> extends RootStateMachine<Event, Response, Result> {
+    public static abstract class TestRootStateMachine<Event, Response, Remote> extends RootStateMachine<Event, Response, Remote> {
         public TestRootStateMachine() throws StateMachineException {}
 
         public TestRootStateMachine(final Class root, final boolean lazy) throws StateMachineException {

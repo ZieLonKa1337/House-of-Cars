@@ -16,7 +16,7 @@ public abstract class RootStateMachine<Event, Response, Remote> extends StateMac
     /** root {@link State} constructor
      * @throws StateMachineException never */
     public RootStateMachine() throws StateMachineException {
-        this(null, true, null, -1);
+        this(Void.class, true, null, -1);
     }
 
     /** {@link StateMachine} constructor */

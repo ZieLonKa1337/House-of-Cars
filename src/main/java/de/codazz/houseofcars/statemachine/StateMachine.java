@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /** This state machine implementation supports
@@ -47,7 +48,7 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
      *      {@code -1} to use this instance as {@link State}, see above.
      * @see RootStateMachine */
     public StateMachine(final Class<?> root, final boolean lazy, final Remote remote, final int capacity) throws StateMachineException {
-        this.state = this.root = root;
+        this.state = this.root = Objects.requireNonNull(root);
         this.lazy = lazy;
         this.remote = remote;
 
@@ -83,6 +84,13 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
     public Object root() {
         final StateHandler rootHandler = stateHandlers.get(root);
         return rootHandler == null ? null : rootHandler.state;
+    }
+
+    /** Can be useful with a lazy state machine that has
+     * not yet instantiated its {@link #root() root state}.
+     * @return the class of the root state */
+    public Class<?> rootClass() {
+        return root;
     }
 
     /** @return the root state's {@link State} annotation */
@@ -125,24 +133,11 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
             handler = null;
             for (final StateHandler<?>.EventHandler eventHandler : eventHandlers) {
                 if (stateHandlers.containsKey(eventHandler.next)) continue;
-
-                final StateHandler<?> next = new StateHandler<>(eventHandler.next);
-                stateHandlers.put(next.state.getClass(), next);
-
-                handler = next;
+                forceInstantiate(eventHandler.next);
+                handler = stateHandlers.get(eventHandler.next);
             }
         }
         lazy = false;
-    }
-
-    @Override
-    public Optional<Response> onEvent(final Event event) throws StateMachineException {
-        assert stateHandlers.containsKey(state);
-        return Optional.ofNullable(stateHandlers.get(state).onEvent(event));
-    }
-
-    private StateHandler handler() {
-        return stateHandlers.get(state);
     }
 
     /** <p>
@@ -159,11 +154,29 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
      * @throws IllegalStateException if the state has already been instantiated */
     public Object instantiate(final Class<?> state) throws StateMachineException, IllegalStateException {
         if (stateHandlers.containsKey(state))
-            throw new IllegalArgumentException("state already instantiated");
+            throw new IllegalStateException("state already instantiated");
+        return forceInstantiate(state);
+    }
+
+    /** Replaces the state with a new instance.
+     * @see #instantiate(Class) */
+    public Object forceInstantiate(final Class<?> state) throws StateMachineException {
+        if (!state.equals(root) && meta(state).root())
+            throw new StateMachineException("state " + name(state) + " would be second root");
 
         final StateHandler<?> handler = new StateHandler<>(state);
         stateHandlers.put(state, handler);
         return handler.state;
+    }
+
+    @Override
+    public Optional<Response> onEvent(final Event event) throws StateMachineException {
+        assert stateHandlers.containsKey(state);
+        return Optional.ofNullable(stateHandlers.get(state).onEvent(event));
+    }
+
+    private StateHandler handler() {
+        return stateHandlers.get(state);
     }
 
     private class StateHandler<T> implements EventHandler<Event, Response> {

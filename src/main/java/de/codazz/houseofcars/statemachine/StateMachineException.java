@@ -4,6 +4,7 @@ package de.codazz.houseofcars.statemachine;
  * <ul>
  *     Possible reasons:
  *     <li>Wrong annotations.</li>
+ *     <li>Two root states in one state machine.</li>
  *     <li>Method takes wrong event type.</li>
  *     <li>Method returns wrong response type.</li>
  *     <li>Method has too restrictive access.</li>
@@ -12,19 +13,19 @@ package de.codazz.houseofcars.statemachine;
 public class StateMachineException extends Exception {
     public StateMachineException() {}
 
-    public StateMachineException(final String s) {
-        super(s);
+    public StateMachineException(final String message) {
+        super(message);
     }
 
-    public StateMachineException(final String s, final Throwable throwable) {
-        super(s, throwable);
+    public StateMachineException(final String message, final Throwable cause) {
+        super(message, cause);
     }
 
-    public StateMachineException(final Throwable throwable) {
-        super(throwable);
+    public StateMachineException(final Throwable cause) {
+        super(cause);
     }
 
-    public StateMachineException(final String s, final Throwable throwable, final boolean b, final boolean b1) {
-        super(s, throwable, b, b1);
+    public StateMachineException(final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
     }
 }
