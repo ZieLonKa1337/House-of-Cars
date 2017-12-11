@@ -230,26 +230,20 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
     public static class Root4 {}
 
     @State
-    @OnEvents({
-        @OnEvent(value = Object.class, next = Sub1.class),
-        @OnEvent(value = String.class, next = Sub2.class),
-        @OnEvent(value = CharSequence.class, next = Sub2.class)
-    })
+    @OnEvent(value = Object.class, next = Sub1.class)
+    @OnEvent(value = String.class, next = Sub2.class)
+    @OnEvent(value = CharSequence.class, next = Sub2.class)
     public static class Root5 {}
 
     /** invalid: ambiguous event */
     @State
-    @OnEvents({
-        @OnEvent(value = Object.class, next = Sub1.class),
-        @OnEvent(value = Object.class, next = Sub2.class)
-    })
+    @OnEvent(value = Object.class, next = Sub1.class)
+    @OnEvent(value = Object.class, next = Sub2.class)
     public static class Root6 {}
 
     @State
-    @OnEvents({
-        @OnEvent(value = Object.class,  next = Root7.StaticMemberSub.class),
-        @OnEvent(value = String.class,  next = Root7.MemberSub.class)
-    })
+    @OnEvent(value = Object.class,  next = Root7.StaticMemberSub.class)
+    @OnEvent(value = String.class,  next = Root7.MemberSub.class)
     public static class Root7 {
         @State(end = true)
         public static class StaticMemberSub {}
@@ -264,10 +258,8 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
 
     @State
     public static class Sub1 {
-        @OnEvents({
-            @OnEvent(value = ArrayList.class, next = Sub2.class),
-            @OnEvent(value = LinkedList.class, next = Sub2.class),
-        })
+        @OnEvent(value = ArrayList.class, next = Sub2.class)
+        @OnEvent(value = LinkedList.class, next = Sub2.class)
         public void event(final List event) {}
     }
 

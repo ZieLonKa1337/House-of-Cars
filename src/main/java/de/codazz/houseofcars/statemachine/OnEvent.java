@@ -1,6 +1,7 @@
 package de.codazz.houseofcars.statemachine;
 
 import java.lang.annotation.Inherited;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -19,6 +20,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </p>
  * @author rstumm2s */
 @Inherited
+@Repeatable(OnEvent.OnEvents.class)
 @Target({TYPE, METHOD})
 @Retention(RUNTIME)
 public @interface OnEvent {
@@ -28,4 +30,11 @@ public @interface OnEvent {
     /** The next state to transition to. Must be annotated with {@link State}!
      * <p>None for an inner transition, this state for an outer transition.</p> */
     Class<?> next() default void.class;
+
+    @Inherited
+    @Target({TYPE, METHOD})
+    @Retention(RUNTIME)
+    @interface OnEvents {
+        OnEvent[] value();
+    }
 }

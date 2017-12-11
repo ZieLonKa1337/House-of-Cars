@@ -269,7 +269,7 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
                         eventMapper.map(metaOnEvent, method);
                     }
 
-                    final OnEvents metaOnEvents = method.getAnnotation(OnEvents.class);
+                    final OnEvent.OnEvents metaOnEvents = method.getAnnotation(OnEvent.OnEvents.class);
                     if (metaOnEvents != null) {
                         for (final OnEvent it : metaOnEvents.value()) {
                             eventMapper.map(it, method);
@@ -283,7 +283,7 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
                         eventMapper.map(metaOnEvent, null);
                     }
 
-                    final OnEvents metaOnEvents = state.getAnnotation(OnEvents.class);
+                    final OnEvent.OnEvents metaOnEvents = state.getAnnotation(OnEvent.OnEvents.class);
                     if (metaOnEvents != null) {
                         for (final OnEvent it : metaOnEvents.value()) {
                             eventMapper.map(it, null);
