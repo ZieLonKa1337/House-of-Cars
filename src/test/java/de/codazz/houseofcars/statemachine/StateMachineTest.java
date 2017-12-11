@@ -6,7 +6,12 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 /** @author rstumm2s */
 @RunWith(Parameterized.class)
@@ -71,15 +76,140 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
 
     @Test
     public void start() throws StateMachineException {
+        assertSame(lazy, machine().lazy());
+
         final Class<?> root = machine().rootClass();
-        if (lazy && (
-            root.equals(Root1.class) ||
-            root.equals(Root6.class) ||
-            root.equals(Root8.class)
-        )) {
-            thrown.expect(StateMachineException.class);
+
+        if (lazy) {
+            assertFalse(machine().valid());
+
+            if (root.equals(Root1.class) ||
+                root.equals(Root6.class) ||
+                root.equals(Root8.class)
+            ) {
+                thrown.expect(StateMachineException.class);
+            }
         }
         machine().start();
+
+        assertEquals(machine().state(), machine().root());
+        assertSame(machine().meta().end(), machine().valid());
+    }
+
+    @Test
+    public void root2_eventNotHandled() throws StateMachineException {
+        if (notRunningFor(Root2.class)) return;
+
+        thrown.expect(IllegalStateException.class);
+        assertFalse(machine().onEvent(new Object()).isPresent());
+    }
+
+    @Test
+    public void root3() throws StateMachineException {
+        if (notRunningFor(Root3.class)) return;
+        machine().start();
+
+        assertFalse(machine().onEvent(new Object()).isPresent());
+        assertEquals(machine().state(), machine().root());
+    }
+
+    @Test
+    public void root5_1() throws StateMachineException {
+        if (notRunningFor(Root5.class)) return;
+        machine().start();
+
+        assertFalse(machine().onEvent(new Object()).isPresent());
+        assertEquals(Sub1.class, machine().state().getClass());
+        assertFalse(machine().valid());
+
+        assertFalse(machine().onEvent(new LinkedList<>()).isPresent());
+        assertEquals(Sub2.class, machine().state().getClass());
+        assertTrue(machine().valid());
+    }
+
+    @Test
+    public void root5_2() throws StateMachineException {
+        if (notRunningFor(Root5.class)) return;
+        machine().start();
+
+        assertFalse(machine().onEvent("event").isPresent());
+        assertEquals(Sub2.class, machine().state().getClass());
+        assertTrue(machine().valid());
+
+        assertEquals("event", machine().onEvent("event").get());
+        assertEquals(Sub2.class, machine().state().getClass());
+    }
+
+    @Test
+    public void root5_3() throws StateMachineException {
+        if (notRunningFor(Root5.class)) return;
+        machine().start();
+
+        thrown.expect(IllegalArgumentException.class);
+        machine().onEvent(new CharSequence() {
+            @Override
+            public int length() {
+                return 0;
+            }
+
+            @Override
+            public char charAt(final int i) {
+                return 0;
+            }
+
+            @Override
+            public CharSequence subSequence(final int i, final int i1) {
+                return null;
+            }
+        });
+    }
+
+    @Test
+    public void root7_1() throws StateMachineException {
+        if (notRunningFor(Root7.class)) return;
+        machine().start();
+
+        assertFalse(machine().onEvent(new Object()).isPresent());
+        assertEquals(Root7.StaticMemberSub.class, machine().state().getClass());
+        assertTrue(machine().valid());
+    }
+
+    @Test
+    public void root7_2() throws StateMachineException {
+        if (notRunningFor(Root7.class)) return;
+        machine().start();
+
+        assertFalse(machine().onEvent("event").isPresent());
+        assertEquals(Root7.MemberSub.class, machine().state().getClass());
+        assertTrue(machine().valid());
+    }
+
+    @Test
+    public void localRoot1() throws StateMachineException {
+        if (notRunningFor("LocalRoot1")) return;
+        machine().start();
+
+        assertFalse(machine().onEvent(new Object()).isPresent());
+        assertEquals("LocalSub1", machine().state().getClass().getSimpleName());
+        assertTrue(machine().valid());
+    }
+
+    @Test
+    public void localRoot2() throws StateMachineException {
+        if (notRunningFor("LocalRoot2")) return;
+        machine().start();
+
+        assertFalse(machine().onEvent(new Object()).isPresent());
+        assertEquals("Sub1", machine().state().getClass().getSimpleName());
+        assertTrue(machine().valid());
+    }
+
+    private boolean notRunningFor(final Class stateMachine) {
+        return !machine().rootClass().equals(stateMachine);
+    }
+
+    private boolean notRunningFor(final String simpleName) {
+        return !machine().rootClass().getSimpleName().equals(simpleName);
     }
 
     /** invalid: only one state which is not an accepted final state */
@@ -135,10 +265,10 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
     @State
     public static class Sub1 {
         @OnEvents({
-            @OnEvent(value = Integer.class, next = Sub2.class),
-            @OnEvent(value = String.class, next = Sub2.class)
+            @OnEvent(value = ArrayList.class, next = Sub2.class),
+            @OnEvent(value = LinkedList.class, next = Sub2.class),
         })
-        public void event(final String event) {}
+        public void event(final List event) {}
     }
 
     @State(end = true)

@@ -48,7 +48,7 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
      *      {@code -1} to use this instance as {@link State}, see above.
      * @see RootStateMachine */
     public StateMachine(final Class<?> root, final boolean lazy, final Remote remote, final int capacity) throws StateMachineException {
-        this.state = this.root = Objects.requireNonNull(root);
+        this.root = Objects.requireNonNull(root);
         this.lazy = lazy;
         this.remote = remote;
 
@@ -61,6 +61,7 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
 
     /** enter the root state */
     public void start() throws StateMachineException {
+        state = root;
         if (handler() == null) {
             // lazy instantiation
             instantiate(root);
@@ -169,14 +170,16 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
         return handler.state;
     }
 
+    /** @throws IllegalStateException if this state machine has not been {@link #start() started} yet */
     @Override
     public Optional<Response> onEvent(final Event event) throws StateMachineException {
-        assert stateHandlers.containsKey(state);
-        return Optional.ofNullable(stateHandlers.get(state).onEvent(event));
+        final StateHandler<?> handler = handler();
+        if (handler == null) throw new IllegalStateException("state machine not started but received event: " + event);
+        return Optional.ofNullable(handler.onEvent(event));
     }
 
     private StateHandler handler() {
-        return stateHandlers.get(state);
+        return state == null ? null : stateHandlers.get(state);
     }
 
     private class StateHandler<T> implements EventHandler<Event, Response> {
@@ -316,7 +319,7 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
         @Override
         public Response onEvent(final Event event) throws StateMachineException {
             final EventHandler handler = onEvent.get(event.getClass());
-            if (handler == null) throw new StateMachineException(new IllegalArgumentException("event " + event + " is not handled"));
+            if (handler == null) throw new IllegalArgumentException("event " + event + " is not handled");
             final Response response = handler.onEvent(event);
 
             final StateHandler<?> next; {
@@ -380,11 +383,11 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
                 try {
                     return (Response) action.invoke(state, event);
                 } catch (final IllegalAccessException e) {
-                    throw new StateMachineException("failed to call event action in state " + name(StateMachine.this.state), e);
+                    throw new StateMachineException("failed to call event action " + action.getName() + " of state " + name(StateMachine.this.state), e);
                 } catch (final InvocationTargetException e) {
-                    throw new RuntimeException("event action threw exception", e);
+                    throw new RuntimeException("event action " + action.getName() + " of state " + name(StateMachine.this.state) + " threw exception", e);
                 } catch (final ClassCastException e) {
-                    throw new StateMachineException("event action returned wrong response type", e);
+                    throw new StateMachineException("event action " + action.getName() + " of state " + name(StateMachine.this.state) + " returned wrong response type", e);
                 }
             }
         }
