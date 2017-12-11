@@ -10,20 +10,14 @@ public abstract class AbstractStateMachineTest<Event, Response, Remote> {
 
     private Class root;
     private StateMachine<Event, Response, Remote> machine;
-    private Remote remote;
 
-    protected AbstractStateMachineTest(final Class root, final boolean lazy, final Remote remote) {
+    protected AbstractStateMachineTest(final Class root, final boolean lazy) {
         this.root = root;
         this.lazy = lazy;
-        this.remote = remote;
     }
 
     protected StateMachine<Event, Response, Remote> machine() {
         return machine;
-    }
-
-    protected Remote remote() {
-        return remote;
     }
 
     protected StateMachine<Event, Response, Remote> instantiate(Class root) throws StateMachineException {

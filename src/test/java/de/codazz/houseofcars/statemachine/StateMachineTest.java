@@ -58,7 +58,7 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
     public ExpectedException thrown = ExpectedException.none();
 
     public StateMachineTest(final Class root, final boolean lazy) {
-        super(root, lazy, null);
+        super(root, lazy);
     }
 
     @Override

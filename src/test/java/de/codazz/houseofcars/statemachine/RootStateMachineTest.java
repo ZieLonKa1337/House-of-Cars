@@ -24,7 +24,7 @@ public class RootStateMachineTest<Event, Response, Remote> extends AbstractState
     }
 
     public RootStateMachineTest(final Class root, final boolean lazy) {
-        super(root, lazy, null);
+        super(root, lazy);
     }
 
     @SuppressWarnings("unchecked")
