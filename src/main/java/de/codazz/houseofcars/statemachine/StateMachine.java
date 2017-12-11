@@ -34,6 +34,14 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
         this(root, lazy, null, 16);
     }
 
+    public StateMachine(final Class<?> root, final Remote remote) throws StateMachineException {
+        this(root, false, remote, 16);
+    }
+
+    public StateMachine(final Class<?> root, final boolean lazy, final Remote remote) throws StateMachineException {
+        this(root, lazy, remote, 16);
+    }
+
     /** <strong>How to create a {@link StateMachine} class that is its own root {@link State}:</strong>
      * <p>
      * Add a no-arg constructor for use as state that combines {@code lazy = true} and {@code capacity = -1}.

@@ -30,6 +30,16 @@ public abstract class RootStateMachine<Event, Response, Remote> extends StateMac
     }
 
     /** {@link StateMachine} constructor */
+    public RootStateMachine(final Class<?> root, final Remote remote) throws StateMachineException {
+        super(root, remote);
+    }
+
+    /** {@link StateMachine} constructor */
+    public RootStateMachine(final Class<?> root, final boolean lazy, final Remote remote) throws StateMachineException {
+        super(root, lazy, remote);
+    }
+
+    /** {@link StateMachine} constructor */
     protected RootStateMachine(final Class<?> root, final boolean lazy, final Remote remote, final int statesCapacity) throws StateMachineException {
         super(root, lazy, remote, statesCapacity);
     }
