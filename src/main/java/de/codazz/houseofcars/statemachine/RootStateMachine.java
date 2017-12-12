@@ -3,7 +3,7 @@ package de.codazz.houseofcars.statemachine;
 /** <p>
  * A state machine that is its own root state.
  * Extend this and propagate the {@link StateMachineException}
- * through the no-arg constructor.
+ * through the no-arg and/or one-arg (remote) constructors.
  * </p><p>
  * You can omit the {@link State} annotation on the subclass,
  * but if you supply it {@code root = true} will not be inherited.
@@ -17,6 +17,12 @@ public abstract class RootStateMachine<Event, Response, Remote> extends StateMac
      * @throws StateMachineException never */
     public RootStateMachine() throws StateMachineException {
         this(Void.class, true, null, -1);
+    }
+
+    /** root {@link State} constructor
+     * @throws StateMachineException never */
+    public RootStateMachine(final Remote remote) throws StateMachineException {
+        this(Void.class, true, remote, -1);
     }
 
     /** {@link StateMachine} constructor */

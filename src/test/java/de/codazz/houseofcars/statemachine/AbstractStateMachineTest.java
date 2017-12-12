@@ -20,7 +20,7 @@ public abstract class AbstractStateMachineTest<Event, Response, Remote> {
         return machine;
     }
 
-    protected StateMachine<Event, Response, Remote> instantiate(Class root) throws StateMachineException {
+    protected StateMachine<Event, Response, Remote> instantiate(final Class root) throws StateMachineException {
         return new StateMachine<>(root, lazy);
     }
 

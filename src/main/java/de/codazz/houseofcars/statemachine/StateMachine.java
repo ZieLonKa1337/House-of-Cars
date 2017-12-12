@@ -4,11 +4,15 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /** This state machine implementation supports
  * both Moore and Mealy machines through the use
@@ -44,10 +48,10 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
 
     /** <strong>How to create a {@link StateMachine} class that is its own root {@link State}:</strong>
      * <p>
-     * Add a no-arg constructor for use as state that combines {@code lazy = true} and {@code capacity = -1}.
+     * Add a no-arg and/or one-arg (remote) constructor for use as state that combines {@code lazy = true} and {@code capacity = -1}.
      * Since the state machine is lazy, nothing is done on instantiation. The special value {@code -1} means
      * that the collection holding states will not be created. This makes the instance unusable as state machine
-     * but instantiation trivial and fast. Be sure <strong>not</strong> to call the no-arg constructor yourself!
+     * but instantiation trivial and fast. Be sure <strong>not</strong> to call these "as-state" constructors yourself!
      * </p>
      * @param lazy If {@code true}, state initialization and validation are delayed until a state is first entered.
      *      Can be used to write a class that is both a {@link StateMachine} and a {@link State}.
@@ -253,7 +257,16 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
             {
                 Method onEnter = null, onExit = null;
 
-                for (final Method method : state.getMethods()) {
+                for (final Method method : Stream.concat(
+                    Arrays.stream(state.getMethods()),
+                    Arrays.stream(state.getDeclaredMethods()).peek(method -> {
+                        if (!Modifier.isPublic(method.getModifiers()) &&
+                            !method.isAccessible()
+                        ){
+                            method.setAccessible(true);
+                        }
+                    })
+                ).distinct().toArray(Method[]::new)) {
                     if (method.isAnnotationPresent(OnEnter.class)) {
                         if (onEnter != null) throw new StateMachineException("only one onEnter per State is permitted");
                         onEnter = method;

@@ -6,10 +6,8 @@ import org.junit.runners.Parameterized;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.Collection;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /** @author rstumm2s */
 @RunWith(Parameterized.class)
@@ -17,20 +15,27 @@ public class RootStateMachineTest<Event, Response, Remote> extends AbstractState
     @Parameterized.Parameters
     public static Iterable data() {
         return Arrays.asList(new Object[][]{
-                {TestRootStateMachine1.class, false}, {TestRootStateMachine1.class, true},
-                {TestRootStateMachine2.class, false}, {TestRootStateMachine2.class, true},
-                {TestRootStateMachine3.class, false}, {TestRootStateMachine3.class, true}
+                {TestRootStateMachine1.class, false, null}, {TestRootStateMachine1.class, true, null},
+                {TestRootStateMachine2.class, false, null}, {TestRootStateMachine2.class, true, null},
+                {TestRootStateMachine3.class, false, null}, {TestRootStateMachine3.class, true, null},
+                {TestRootStateMachine4.class, false, new Object()}, {TestRootStateMachine4.class, true, new Object()}
         });
     }
 
-    public RootStateMachineTest(final Class root, final boolean lazy) {
+    private final Object remote;
+
+    public RootStateMachineTest(final Class root, final boolean lazy, final Object remote) {
         super(root, lazy);
+        this.remote = remote;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected StateMachine instantiate(final Class root) {
         try {
+            if (remote != null) {
+                return (StateMachine) root.getConstructor(boolean.class, remote.getClass()).newInstance(lazy, remote);
+            }
             return (StateMachine) root.getConstructor(boolean.class).newInstance(lazy);
         } catch (final InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | ClassCastException e) {
             throw new RuntimeException("likely bug in test code", e);
@@ -39,6 +44,8 @@ public class RootStateMachineTest<Event, Response, Remote> extends AbstractState
 
     @Test
     public void meta() {
+        if (lazy) return;
+
         final Object root = machine().root();
         final State meta = machine().meta();
         if (root instanceof TestRootStateMachine1) {
@@ -53,11 +60,31 @@ public class RootStateMachineTest<Event, Response, Remote> extends AbstractState
         }
     }
 
+    @Test
+    public void remote() {
+        if (lazy) return;
+
+        final Object root = machine().root();
+        if (root instanceof TestRootStateMachine4) {
+            assertSame(remote, machine().remote());
+        } else {
+            assertNull(machine().remote());
+        }
+    }
+
     public static abstract class TestRootStateMachine<Event, Response, Remote> extends RootStateMachine<Event, Response, Remote> {
         public TestRootStateMachine() throws StateMachineException {}
 
-        public TestRootStateMachine(final Class root, final boolean lazy) throws StateMachineException {
+        public TestRootStateMachine(final Remote remote) throws StateMachineException {
+            super(remote);
+        }
+
+        public TestRootStateMachine(final Class<?> root, final boolean lazy) throws StateMachineException {
             super(root, lazy);
+        }
+
+        public TestRootStateMachine(final Class root, final boolean lazy, final Remote remote) throws StateMachineException {
+            super(root, lazy, remote);
         }
     }
 
@@ -89,6 +116,20 @@ public class RootStateMachineTest<Event, Response, Remote> extends AbstractState
 
         public TestRootStateMachine3(final boolean lazy) throws StateMachineException {
             super(TestRootStateMachine3.class, lazy);
+        }
+    }
+
+    /** with remote */
+    @State(end = true)
+    public static class TestRootStateMachine4 extends TestRootStateMachine<Object, Object, Object> {
+        public TestRootStateMachine4() throws StateMachineException {}
+
+        public TestRootStateMachine4(final Object remote) throws StateMachineException {
+            super(remote);
+        }
+
+        public TestRootStateMachine4(final boolean lazy, final Object remote) throws StateMachineException {
+            super(TestRootStateMachine4.class, lazy, remote);
         }
     }
 }

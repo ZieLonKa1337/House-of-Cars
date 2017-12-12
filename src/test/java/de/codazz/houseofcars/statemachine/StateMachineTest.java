@@ -260,13 +260,13 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
     public static class Sub1 {
         @OnEvent(value = ArrayList.class, next = Sub2.class)
         @OnEvent(value = LinkedList.class, next = Sub2.class)
-        public void event(final List event) {}
+        void event(final List event) {}
     }
 
     @State(end = true)
     public static class Sub2 {
         @OnEvent(value = String.class, next = Sub2.class)
-        public String echo(final String event) {
+        String echo(final String event) {
             return event;
         }
     }
