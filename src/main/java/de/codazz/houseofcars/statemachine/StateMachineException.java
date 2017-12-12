@@ -7,7 +7,7 @@ package de.codazz.houseofcars.statemachine;
  *     <li>Two root states in one state machine.</li>
  *     <li>Method takes wrong event type.</li>
  *     <li>Method returns wrong response type.</li>
- *     <li>Method has too restrictive access.</li>
+ *     <li>Constructor has too restrictive access.</li>
  * </ul>
  * @author rstumm2s */
 public class StateMachineException extends Exception {
