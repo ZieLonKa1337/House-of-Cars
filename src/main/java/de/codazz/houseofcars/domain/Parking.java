@@ -9,6 +9,7 @@ import java.util.Optional;
 /** @author rstumm2s */
 @javax.persistence.Entity
 @NamedQuery(name = "Parking.countParking", query = "SELECT COUNT(p) FROM Parking p WHERE p.parked IS NULL AND p.spot IS NULL")
+@NamedQuery(name = "Parking.findParking", query = "SELECT p FROM Parking p WHERE p.parked IS NULL AND p.spot IS NULL AND p.vehicle = :vehicle")
 public class Parking extends Activity {
     @ManyToOne(optional = false)
     private Vehicle vehicle;

@@ -78,8 +78,6 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
     public void start() throws StateMachineException {
         assertSame(lazy, machine().lazy());
 
-        final Class<?> root = machine().rootClass();
-
         if (lazy) {
             assertFalse(machine().valid());
 

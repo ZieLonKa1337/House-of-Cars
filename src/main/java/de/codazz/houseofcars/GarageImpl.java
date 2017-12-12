@@ -3,6 +3,7 @@ package de.codazz.houseofcars;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
+import de.codazz.houseofcars.websocket.subprotocol.VGate;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
@@ -25,7 +26,7 @@ import static spark.Spark.*;
 public class GarageImpl implements Garage, Closeable {
     private static final String CONFIG_FILE = "house-of-cars.json";
 
-    static GarageImpl instance; {
+    static volatile GarageImpl instance; {
         if (instance != null) throw new IllegalStateException();
         instance = this;
     }
@@ -126,6 +127,7 @@ public class GarageImpl implements Garage, Closeable {
 
         webSocket("/ws/status", Status.class);
         webSocket("/ws/gate", Gate.class);
+        webSocket("/ws/vgate", VGate.class);
 
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
         get("/", new TemplateViewRoute() {
