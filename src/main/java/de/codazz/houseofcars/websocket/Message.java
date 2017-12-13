@@ -5,9 +5,9 @@ import com.esotericsoftware.jsonbeans.OutputType;
 
 /** @author rstumm2s */
 public class Message {
-    protected static final Json json = new Json(OutputType.json) {{
+    protected static final ThreadLocal<Json> json = ThreadLocal.withInitial(() -> new Json(OutputType.json) {{
         setTypeName(null);
-    }};
+    }});
 
     public final String type;
 
@@ -16,6 +16,6 @@ public class Message {
     }
 
     public String toJson() {
-        return json.toJson(this);
+        return json.get().toJson(this);
     }
 }
