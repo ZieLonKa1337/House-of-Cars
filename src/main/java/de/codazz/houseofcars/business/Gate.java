@@ -1,16 +1,20 @@
 package de.codazz.houseofcars.business;
 
 import de.codazz.houseofcars.GarageImpl;
-import de.codazz.houseofcars.domain.Parking;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.statemachine.OnEvent;
 import de.codazz.houseofcars.statemachine.RootStateMachine;
 import de.codazz.houseofcars.statemachine.State;
 import de.codazz.houseofcars.statemachine.StateMachineException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** @author rstumm2s */
 @State(root = true, end = true)
-public class Gate extends RootStateMachine<String, Boolean, Void> {
+@OnEvent(value = Gate.OpenedEvent.class, next = Gate.Open.class)
+public class Gate extends RootStateMachine<Gate.Event, Void, Void> {
+    private static final Logger log = LoggerFactory.getLogger(Gate.class);
+
     /** as state */
     public Gate() throws StateMachineException {}
 
@@ -21,33 +25,52 @@ public class Gate extends RootStateMachine<String, Boolean, Void> {
 
     /** the gate sees a vehicle's license
      * and asks whether it is allowed in */
-    @OnEvent(value = String.class, next = Open.class)
-    boolean onOpenRequest(final String license) {
-        return GarageImpl.instance().numFree() > 0 &&
-            GarageImpl.instance().persistence.execute(em -> em
-                .createNamedQuery("Vehicle.mayEnter", Boolean.class)
-                .setParameter("license", license)
-                .getSingleResult());
+    public boolean requestOpen(final String license) {
+        if (GarageImpl.instance().numFree() == 0) return false;
+        final boolean permission = GarageImpl.instance().persistence.execute(em -> em
+            .createNamedQuery("Vehicle.mayEnter", Boolean.class)
+            .setParameter("license", license)
+            .getSingleResult());
+        log.trace("requested permission for {}: {}", license, permission);
+        return permission;
     }
+
+    public abstract class Event {}
+
+    /** the gate is open */
+    public class OpenedEvent extends Event {}
 
     @State
     public class Open {
-        /** the vehicle entered the garage
-         * and the gate has closed again */
-        @OnEvent(value = String.class, next = Gate.class)
-        void onEntered(final String license) {
-            GarageImpl.instance().persistence.<Void>submitTransact((em, __) -> {
-                Vehicle vehicle = em.find(Vehicle.class, license);
-                if (vehicle == null) {
-                    vehicle = new Vehicle(license);
-                    em.persist(vehicle);
+        @OnEvent(value = EnteredEvent.class, next = Gate.class)
+        void onEntered(final EnteredEvent event) {
+            final Vehicle vehicle = GarageImpl.instance().persistence.transact((em, __) -> {
+                Vehicle v = em.find(Vehicle.class, event.license);
+                if (v == null) {
+                    log.trace("new vehicle: {}", event.license);
+                    v = new Vehicle(event.license);
+                    em.persist(v);
                 }
-                vehicle.present(true);
-
-                final Parking p = new Parking(vehicle);
-                em.persist(p);
-                return null;
+                log.trace("{} entered", event.license);
+                return v;
             });
+
+            try {
+                vehicle.state().onEvent(((Vehicle.Lifecycle.Away) vehicle.state().state()).new EnteredEvent());
+            } catch (final StateMachineException | ClassNotFoundException e) {
+                log.error("failed to mutate state of vehicle {}", event.license);
+                throw new RuntimeException(e);
+            }
+        }
+
+        /** a vehicle entered the garage
+         * and the gate has closed again */
+        public class EnteredEvent extends Event {
+            public final String license;
+
+            public EnteredEvent(final String license) {
+                this.license = license;
+            }
         }
     }
 }

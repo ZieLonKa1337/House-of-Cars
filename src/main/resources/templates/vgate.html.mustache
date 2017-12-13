@@ -29,6 +29,9 @@
                     case 'open-response':
                         if (!data.permission) return;
                         state(true);
+                        socket.send(JSON.stringify({
+                            type: 'opened'
+                        }));
 
                         // simulate vehicle driving in
                         setTimeout(function () {

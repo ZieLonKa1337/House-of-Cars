@@ -6,24 +6,20 @@ import org.hibernate.jpa.HibernatePersistenceProvider;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import java.io.Closeable;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-/** runs code on the persistence context thread
+/** Runs transactions on a dedicated thread.
+ * <p><strong>
+ * If your sync calls never return you're
+ * probably nesting calls, causing a deadlock.
+ * </strong></p>
  * @author rstumm2s */
 public class Persistence implements Closeable {
     ExecutorService executor = Executors.newSingleThreadExecutor(); // package scope and non-final for tests

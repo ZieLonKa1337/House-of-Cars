@@ -4,6 +4,7 @@ create table Parking (
 	started timestamptz not null,
 	OPTLOCK int8 not null,
 	finished timestamptz,
+	freed timestamptz,
 	parked timestamptz,
 	spot_id int4,
 	vehicle_license varchar(255) not null,
@@ -20,7 +21,7 @@ create table Spot (
 create table Vehicle (
 	license varchar(255) not null,
 	OPTLOCK int8 not null,
-	present boolean not null,
+	state varchar(255) not null,
 	primary key (license)
 );
 

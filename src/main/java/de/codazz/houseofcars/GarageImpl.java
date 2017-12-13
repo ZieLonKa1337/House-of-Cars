@@ -4,6 +4,8 @@ import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
 import de.codazz.houseofcars.websocket.subprotocol.VGate;
+import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggerFactoryBinder;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
@@ -58,7 +60,7 @@ public class GarageImpl implements Garage, Closeable {
             config = new ConfigImpl();
             try {
                 final Config userConfig = ConfigImpl.load(new FileInputStream(CONFIG_FILE)),
-                        defaults = new ConfigImpl();
+                    defaults = new ConfigImpl();
                 config = userConfig.merge(defaults, false);
             } catch (final FileNotFoundException ignore) {}
         }
@@ -71,10 +73,10 @@ public class GarageImpl implements Garage, Closeable {
         numTotal_type = persistence.execute(em -> em.createNamedQuery("Spot.countType", Long.class));
         numUsed = persistence.execute(em -> em.createNamedQuery("Spot.countUsed", Long.class));
         numUsed_type = persistence.execute(em -> em.createNamedQuery("Spot.countUsedType", Long.class));
-        numParking = persistence.execute(em -> em.createNamedQuery("Parking.countParking", Long.class));
+        numParking = persistence.execute(em -> em.createNamedQuery("Parking.countLookingForSpot", Long.class));
         numVehicles = persistence.execute(em -> em.createNamedQuery("Vehicle.countPresent", Long.class));
         nextFree = persistence.execute(em -> em.createNamedQuery("Spot.anyFree", Spot.class)
-                .setMaxResults(1));
+            .setMaxResults(1));
     }
 
     @Override
@@ -85,8 +87,8 @@ public class GarageImpl implements Garage, Closeable {
     @Override
     public int numTotal(final Spot.Type type) {
         return persistence.execute(__ -> numTotal_type
-                .setParameter("type", type)
-                .getSingleResult().intValue());
+            .setParameter("type", type)
+            .getSingleResult().intValue());
     }
 
     @Override
@@ -97,8 +99,8 @@ public class GarageImpl implements Garage, Closeable {
     @Override
     public int numUsed(final Spot.Type type) {
         return persistence.execute(__ -> numUsed_type
-                .setParameter("type", type)
-                .getSingleResult().intValue());
+            .setParameter("type", type)
+            .getSingleResult().intValue());
     }
 
     @Override
@@ -114,8 +116,8 @@ public class GarageImpl implements Garage, Closeable {
     @Override
     public Optional<Spot> nextFree(final Spot.Type type) {
         return persistence.execute(__ -> nextFree
-                .setParameter("type", type)
-                .getResultStream().findFirst());
+            .setParameter("type", type)
+            .getResultStream().findFirst());
     }
 
     @Override

@@ -4,15 +4,12 @@ import de.codazz.houseofcars.domain.ActivityTestUtil;
 import de.codazz.houseofcars.domain.Parking;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -20,8 +17,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.AbstractExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -201,8 +196,8 @@ public class GarageImplTest {
             finished += garage.persistence.transact((em, __) -> {
                 for (int i = 0; i < num; i++) {
                     final Parking parking = parkingsParked.stream()
-                            .filter(x -> x.spot().get().type() == type)
-                            .findFirst().get();
+                        .filter(x -> x.spot().get().type() == type)
+                        .findFirst().get();
                     parkingsParked.remove(parking);
                     ActivityTestUtil.clock(parking, tick());
                     parking.finish();
@@ -221,7 +216,7 @@ public class GarageImplTest {
 
         // leave garage
         garage.persistence.<Void>transact((em, __) -> {
-            parkingsFinished.forEach(it -> it.vehicle().present(false));
+//            parkingsFinished.forEach(it -> it.vehicle().type(false)); // FIXME
             return null;
         });
         checkState(NUM_TOTAL, NUM_TOTAL, 0, 0, 0, 0, 0);
@@ -231,14 +226,15 @@ public class GarageImplTest {
         }
     }
 
-    private void checkState(
-            final int numTotal,
-            final int numFree,
-            final int numUsed,
-            final int numPending,
-            final int numParking,
-            final int numLeaving,
-            final int numVehicles) {
+    public static void checkState(
+        final int numTotal,
+        final int numFree,
+        final int numUsed,
+        final int numPending,
+        final int numParking,
+        final int numLeaving,
+        final int numVehicles
+    ) {
         assertEquals(numTotal, garage.numTotal());
         assertEquals(numFree, garage.numFree());
         assertEquals(numUsed, garage.numUsed());
@@ -248,12 +244,13 @@ public class GarageImplTest {
         assertEquals(numVehicles, garage.numVehicles());
     }
 
-    private void checkState(
-            final Spot.Type type,
-            final int numTotal,
-            final int numFree,
-            final int numUsed,
-            final boolean nextFree) {
+    public static void checkState(
+        final Spot.Type type,
+        final int numTotal,
+        final int numFree,
+        final int numUsed,
+        final boolean nextFree
+    ) {
         assertEquals(numTotal, garage.numTotal(type));
         assertEquals(numFree, garage.numFree(type));
         assertEquals(numUsed, garage.numUsed(type));
@@ -279,7 +276,6 @@ public class GarageImplTest {
                         v = new Vehicle(license);
                         em.persist(v);
                     }
-                    v.present(true);
                     vehicle = v;
                 }
 
