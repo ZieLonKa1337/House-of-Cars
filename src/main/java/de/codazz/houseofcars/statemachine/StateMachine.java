@@ -4,11 +4,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -208,14 +207,19 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
             meta = meta(state);
 
             final boolean isInstanceMember = state.isMemberClass() && !Modifier.isStatic(state.getModifiers());
-            final Object enclosingState;
+            final Object enclosingInstance;
             if (isInstanceMember) {
                 final StateHandler enclosingHandler = stateHandlers.get(state.getEnclosingClass());
-                if (enclosingHandler == null)
-                    throw new StateMachineException("state " + name(state) + " is a non-static member class but its enclosing state has not yet been instantiated in this state machine");
-                enclosingState = enclosingHandler.state;
+                if (enclosingHandler != null) {
+                    enclosingInstance = enclosingHandler.state;
+                } else {
+                    if (state.getEnclosingClass().equals(StateMachine.this.getClass())) {
+                        enclosingInstance = StateMachine.this;
+                    } else
+                        throw new StateMachineException("state " + name(state) + " is a non-static member class but its enclosing state has not yet been instantiated in this state machine");
+                }
             } else {
-                enclosingState = null;
+                enclosingInstance = null;
             }
 
             final Constructor<T> constructor;
@@ -248,7 +252,14 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
             class EventMapper {
                 void map(final OnEvent meta, final Method action) throws StateMachineException {
                     if (onEvent.containsKey(meta.value()))
-                        throw new StateMachineException("Event " + meta.value() + " already mapped. Only one handler per event is permitted.");
+                        throw new StateMachineException("Event " + meta.value() + " already mapped on state " + name(state) + ". Only one handler per event is permitted.");
+
+                    if (action != null) {
+                        final Parameter[] parameters = action.getParameters();
+                        if (parameters.length != 1 || !meta.value().isAssignableFrom(parameters[0].getType()))
+                            throw new StateMachineException("action " + action.getName() + " on state " + name(state) + " does not take event " + meta.value());
+                    }
+
                     onEvent.put(meta.value(), new EventHandler(action, meta.next()));
                 }
             }
@@ -262,7 +273,7 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
                     Arrays.stream(state.getDeclaredMethods()).peek(method -> {
                         if (!Modifier.isPublic(method.getModifiers()) &&
                             !method.isAccessible()
-                        ){
+                        ) {
                             method.setAccessible(true);
                         }
                     })
@@ -317,9 +328,9 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
                 try {
                     if (isInstanceMember) {
                         if (meta.remote() != void.class) {
-                            instance = constructor.newInstance(enclosingState, remote);
+                            instance = constructor.newInstance(enclosingInstance, remote);
                         } else {
-                            instance = constructor.newInstance(enclosingState);
+                            instance = constructor.newInstance(enclosingInstance);
                         }
                     } else {
                         if (meta.remote() != void.class) {
