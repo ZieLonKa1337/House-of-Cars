@@ -1,6 +1,5 @@
 package de.codazz.houseofcars.websocket.subprotocol;
 
-import de.codazz.houseofcars.GarageImpl;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.websocket.Message;
 import org.eclipse.jetty.websocket.api.Session;
@@ -13,8 +12,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /** @author rstumm2s */
 @WebSocket
@@ -51,10 +48,10 @@ public class Status {
 
     private static Message newUpdate() {
         return new Message("update") {
-            final Map<String, Integer> values = new HashMap<>(); {
-                values.put("numFree", GarageImpl.instance().numFree());
+            final Map<String, Long> values = new HashMap<>(); {
+                values.put("numFree", Spot.countFree());
                 for (final Spot.Type type : Spot.Type.values()) {
-                    values.put("numFree-" + type.name(), GarageImpl.instance().numFree(type));
+                    values.put("numFree-" + type.name(), Spot.countFree(type));
                 }
             }
         };

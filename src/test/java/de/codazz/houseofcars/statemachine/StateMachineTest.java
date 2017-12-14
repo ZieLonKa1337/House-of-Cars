@@ -90,7 +90,7 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
         }
         machine().start();
 
-        assertEquals(machine().state(), machine().root());
+        assertEquals(machine().<Object>state(), machine().root());
         assertSame(machine().meta().end(), machine().valid());
     }
 
@@ -108,7 +108,7 @@ public class StateMachineTest extends AbstractStateMachineTest<Object, Object, O
         machine().start();
 
         assertFalse(machine().onEvent(new Object()).isPresent());
-        assertEquals(machine().state(), machine().root());
+        assertEquals(machine().<Object>state(), machine().root());
     }
 
     @Test

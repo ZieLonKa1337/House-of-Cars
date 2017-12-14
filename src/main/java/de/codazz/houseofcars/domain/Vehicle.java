@@ -1,6 +1,6 @@
 package de.codazz.houseofcars.domain;
 
-import de.codazz.houseofcars.GarageImpl;
+import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.statemachine.OnEnter;
 import de.codazz.houseofcars.statemachine.OnEvent;
 import de.codazz.houseofcars.statemachine.OnExit;
@@ -14,13 +14,51 @@ import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.NamedQuery;
 import javax.persistence.Transient;
+import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
-@NamedQuery(name = "Vehicle.countPresent", query = "SELECT COUNT(v) FROM Vehicle v WHERE v.state != 'Away'")
-@NamedQuery(name = "Vehicle.mayEnter", query = "SELECT COUNT(v) = 0 FROM Vehicle v WHERE v.license = :license AND v.state != 'Away'")
+@NamedQuery(name = "Vehicle.count", query =
+    "SELECT COUNT(v) FROM Vehicle v")
+@NamedQuery(name = "Vehicle.countPresent", query =
+    "SELECT COUNT(v) FROM Vehicle v WHERE v.state != 'Away'")
+@NamedQuery(name = "Vehicle.countPending", query =
+    "SELECT COUNT(v) FROM Vehicle v WHERE v.state != 'Parking'")
+@NamedQuery(name = "Vehicle.countState", query =
+    "SELECT COUNT(v) FROM Vehicle v WHERE v.state = :state")
+@NamedQuery(name = "Vehicle.mayEnter", query =
+    "SELECT COUNT(v) = 0 FROM Vehicle v WHERE v.license = :license AND v.state != 'Away'")
 public class Vehicle extends Entity {
     private static final Logger log = LoggerFactory.getLogger(Vehicle.class);
+
+    public static long count() {
+        return Garage.instance().persistence.execute(em -> em
+            .createNamedQuery("Vehicle.count", Long.class)
+            .getSingleResult());
+    }
+
+    /** @return the number of vehicles that are not {@link Lifecycle.Away away} */
+    public static long countPresent() {
+        return Garage.instance().persistence.execute(em -> em
+            .createNamedQuery("Vehicle.countPresent", Long.class)
+            .getSingleResult());
+    }
+
+    /** @return the number of vehicles that are either
+     * {@link Lifecycle.LookingForSpot looking for a spot} or
+     * {@link Lifecycle.Leaving leaving} */
+    public static long countPending() {
+        return Garage.instance().persistence.execute(em -> em
+            .createNamedQuery("Vehicle.countPending", Long.class)
+            .getSingleResult());
+    }
+
+    public static long count(final Class<? extends Lifecycle.PersistentState> state) {
+        return Garage.instance().persistence.execute(em -> em
+            .createNamedQuery("Vehicle.countState", Long.class)
+            .setParameter("state", state.getSimpleName())
+            .getSingleResult());
+    }
 
     @Id
     private String license;
@@ -41,13 +79,35 @@ public class Vehicle extends Entity {
         return license;
     }
 
-    @Transient
-    private transient Lifecycle lifecycle;
+    /** @deprecated only for testing */
+    @Deprecated
+    String persistentState() {
+        return state;
+    }
 
+    @Transient
+    transient Lifecycle lifecycle;
+
+    @SuppressWarnings("unchecked")
     public Lifecycle state() throws StateMachineException, ClassNotFoundException {
-        if (lifecycle == null) {
-            lifecycle = new Lifecycle(Class.forName(Lifecycle.class.getName() + "$" + state));
-            lifecycle.start();
+        return state((Class<? extends Lifecycle.PersistentState>) Class.forName(Lifecycle.class.getName() + "$" + state));
+    }
+
+    Lifecycle state(final Class<? extends Lifecycle.PersistentState> state) throws StateMachineException {
+        this.state = state.getSimpleName();
+        if (lifecycle == null || !lifecycle.state().getClass().equals(state)) {
+            lifecycle = new Lifecycle(state);
+
+            final Optional<Parking> parking = Parking.find(Vehicle.this);
+            parking.ifPresent(p -> lifecycle.parking = p);
+
+            if (state.equals(Lifecycle.Parking.class)) {
+                final Spot spot = parking.orElseThrow(() -> new IllegalStateException("likely bug in test code"))
+                    .spot().orElse(null);
+                lifecycle.start(spot);
+            } else {
+                lifecycle.start();
+            }
         }
         return lifecycle;
     }
@@ -59,12 +119,12 @@ public class Vehicle extends Entity {
             super(root, true, null, 4);
         }
 
-        protected class PersistentState {
+        protected abstract class PersistentState {
             @OnEnter // not inherited
             void enter() {
                 final String state = getClass().getSimpleName();
                 log.info("{} state: {} -> {}", Vehicle.this.license, Vehicle.this.state, state);
-                GarageImpl.instance().persistence.<Void>transact((em, __) -> {
+                Garage.instance().persistence.<Void>transact((em, __) -> {
                     Vehicle.this.state = state;
                     return null;
                 });
@@ -77,6 +137,12 @@ public class Vehicle extends Entity {
         @State(end = true)
         @OnEvent(value = Away.EnteredEvent.class, next = LookingForSpot.class)
         public class Away extends PersistentState {
+            @OnEnter
+            @Override
+            void enter() {
+                super.enter();
+            }
+
             /** the vehicle entered the garage */
             public class EnteredEvent extends Event {}
         }
@@ -84,12 +150,16 @@ public class Vehicle extends Entity {
         /** the vehicle is inside the garage, looking for a spot */
         @State
         public class LookingForSpot extends PersistentState {
-            private Spot spot;
+            private Spot spot = parking == null ? null : parking.spot()
+                .orElseThrow(() -> new IllegalStateException("cannot restore spot from " + parking.vehicle() + "'s Parking from " + parking.started()));
 
             @OnEnter
             @Override
             void enter() {
-                parking = GarageImpl.instance().persistence.transact((em, __) -> {
+                if (parking != null) {
+                    log.error("previous Parking from {} not properly finished?", parking.started());
+                }
+                parking = Garage.instance().persistence.transact((em, __) -> {
                     final de.codazz.houseofcars.domain.Parking p = new de.codazz.houseofcars.domain.Parking(Vehicle.this);
                     em.persist(p);
                     return p;
@@ -99,11 +169,16 @@ public class Vehicle extends Entity {
 
             @OnEvent(value = ParkedEvent.class, next = Parking.class)
             void onParked(final ParkedEvent event) {
+                if (spot != null) {
+                    log.error("previous Parking on #{} not properly finished?", spot.id());
+                }
                 spot = event.spot;
             }
 
             @OnExit
             Spot exit() {
+                final Spot spot = this.spot;
+                this.spot = null;
                 return spot;
             }
 
@@ -119,11 +194,11 @@ public class Vehicle extends Entity {
 
         /** the vehicle is parking on a spot, this is what we price */
         @State(end = true)
-        @OnEvent(value = Parking.LeftSpot.class, next = Leaving.class)
+        @OnEvent(value = Parking.LeftSpotEvent.class, next = Leaving.class)
         public class Parking extends PersistentState {
             @OnEnter
             void enter(final Spot spot) {
-                GarageImpl.instance().persistence.transact((em, __) -> {
+                Garage.instance().persistence.transact((em, __) -> {
                     parking.park(spot);
                     return null;
                 });
@@ -132,19 +207,19 @@ public class Vehicle extends Entity {
 
             @OnExit
             void exit() {
-                GarageImpl.instance().persistence.transact((em, __) -> {
+                Garage.instance().persistence.transact((em, __) -> {
                     parking.free();
                     return null;
                 });
             }
 
             /** the vehicle left its spot, we stop pricing here */
-            public class LeftSpot extends Event {}
+            public class LeftSpotEvent extends Event {}
         }
 
         /** the vehicle is driving around the garage to leave */
         @State
-        @OnEvent(value = Leaving.Left.class, next = Away.class)
+        @OnEvent(value = Leaving.LeftEvent.class, next = Away.class)
         public class Leaving extends PersistentState {
             @OnEnter
             @Override
@@ -154,14 +229,14 @@ public class Vehicle extends Entity {
 
             @OnExit
             void exit() {
-                GarageImpl.instance().persistence.<Void>transact((em, __) -> {
+                parking = Garage.instance().persistence.transact((em, __) -> {
                     parking.finish();
                     return null;
                 });
             }
 
             /** the vehicle left the garage through a gate */
-            public class Left extends Event {}
+            public class LeftEvent extends Event {}
         }
     }
 }

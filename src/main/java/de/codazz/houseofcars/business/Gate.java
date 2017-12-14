@@ -1,6 +1,7 @@
 package de.codazz.houseofcars.business;
 
-import de.codazz.houseofcars.GarageImpl;
+import de.codazz.houseofcars.Garage;
+import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.statemachine.OnEvent;
 import de.codazz.houseofcars.statemachine.RootStateMachine;
@@ -26,8 +27,8 @@ public class Gate extends RootStateMachine<Gate.Event, Void, Void> {
     /** the gate sees a vehicle's license
      * and asks whether it is allowed in */
     public boolean requestOpen(final String license) {
-        if (GarageImpl.instance().numFree() == 0) return false;
-        final boolean permission = GarageImpl.instance().persistence.execute(em -> em
+        if (Spot.countFree() == 0) return false;
+        final boolean permission = Garage.instance().persistence.execute(em -> em
             .createNamedQuery("Vehicle.mayEnter", Boolean.class)
             .setParameter("license", license)
             .getSingleResult());
@@ -44,7 +45,7 @@ public class Gate extends RootStateMachine<Gate.Event, Void, Void> {
     public class Open {
         @OnEvent(value = EnteredEvent.class, next = Gate.class)
         void onEntered(final EnteredEvent event) {
-            final Vehicle vehicle = GarageImpl.instance().persistence.transact((em, __) -> {
+            final Vehicle vehicle = Garage.instance().persistence.transact((em, __) -> {
                 Vehicle v = em.find(Vehicle.class, event.license);
                 if (v == null) {
                     log.trace("new vehicle: {}", event.license);

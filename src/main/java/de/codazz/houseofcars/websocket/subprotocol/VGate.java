@@ -1,8 +1,7 @@
 package de.codazz.houseofcars.websocket.subprotocol;
 
 import com.esotericsoftware.jsonbeans.JsonValue;
-import de.codazz.houseofcars.GarageImpl;
-import de.codazz.houseofcars.domain.Parking;
+import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.statemachine.StateMachineException;
@@ -36,8 +35,8 @@ public class VGate extends Gate {
                     public void run() {
                         timer.cancel();
 
-                        final Vehicle vehicle = GarageImpl.instance().persistence.execute(em -> em.find(Vehicle.class, license));
-                        final Spot spot = GarageImpl.instance().persistence.execute(em -> em // TODO select more probable spot based on spot count by type, or select type via UI
+                        final Vehicle vehicle = Garage.instance().persistence.execute(em -> em.find(Vehicle.class, license));
+                        final Spot spot = Garage.instance().persistence.execute(em -> em // TODO select more probable spot based on spot count by type, or select type via UI
                             .createQuery("SELECT s FROM Spot s WHERE s NOT IN (SELECT DISTINCT p.spot FROM Parking p WHERE p.spot IS NOT NULL AND p.freed IS NULL)", Spot.class)
                             .setMaxResults(1)
                             .getSingleResult());

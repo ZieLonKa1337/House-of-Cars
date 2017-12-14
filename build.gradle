@@ -22,7 +22,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
-mainClassName = 'de.codazz.houseofcars.GarageImpl'
+mainClassName = 'de.codazz.houseofcars.Garage'
 
 sourceSets {
     generated {}

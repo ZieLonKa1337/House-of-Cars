@@ -1,6 +1,6 @@
 package de.codazz.houseofcars.domain;
 
-import de.codazz.houseofcars.statemachine.StateMachineException;
+import de.codazz.houseofcars.Garage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,10 +12,19 @@ import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
-@NamedQuery(name = "Parking.countLookingForSpot", query = "SELECT COUNT(p) FROM Parking p WHERE p.parked IS NULL")
-@NamedQuery(name = "Parking.findLookingForSpot", query = "SELECT p FROM Parking p WHERE p.parked IS NULL AND p.vehicle = :vehicle")
+@NamedQuery(name = "Parking.findCurrent", query =
+    "SELECT p FROM Parking p WHERE p.vehicle = :vehicle AND p.finished IS NULL")
 public class Parking extends Activity {
     private static final Logger log = LoggerFactory.getLogger(Parking.class);
+
+    /** @return the current {@link Parking Parking} activity of the given vehicle */
+    public static Optional<Parking> find(final Vehicle vehicle) {
+        return Garage.instance().persistence.execute(em -> em
+            .createNamedQuery("Parking.findCurrent", Parking.class)
+            .setMaxResults(1)
+            .setParameter("vehicle", vehicle)
+            .getResultStream()).findFirst();
+    }
 
     @ManyToOne(optional = false)
     private Vehicle vehicle;

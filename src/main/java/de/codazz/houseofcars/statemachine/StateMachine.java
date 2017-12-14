@@ -70,19 +70,32 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
         }
     }
 
-    /** enter the root state */
     public void start() throws StateMachineException {
+        start(null);
+    }
+
+    /** enter the root state
+     * @param result the object to pass into {@link OnEnter} */
+    public void start(final Object result) throws StateMachineException {
         state = root;
         if (handler() == null) {
             // lazy instantiation
             instantiate(root);
         }
-        handler().onEnter(null);
+        handler().onEnter(result);
+    }
+
+    /** @return the specified state or
+     * {@code null} if not yet instantiated */
+    public <T> T state(final Class<T> state) {
+        @SuppressWarnings("unchecked")
+        final StateHandler<T> handler = (StateHandler<T>) stateHandlers.get(state);
+        return handler == null ? null : handler.state;
     }
 
     /** @return the current state */
-    public Object state() {
-        final StateHandler handler = handler();
+    public <T> T state() {
+        final StateHandler<T> handler = handler();
         return handler == null ? null : handler.state;
     }
 
@@ -93,8 +106,9 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
     }
 
     /** @return the root state */
-    public Object root() {
-        final StateHandler rootHandler = stateHandlers.get(root);
+    public <T> T root() {
+        @SuppressWarnings("unchecked")
+        final StateHandler<T> rootHandler = (StateHandler<T>) stateHandlers.get(root);
         return rootHandler == null ? null : rootHandler.state;
     }
 
@@ -189,8 +203,9 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
         return Optional.ofNullable(handler.onEvent(event));
     }
 
-    private StateHandler handler() {
-        return state == null ? null : stateHandlers.get(state);
+    @SuppressWarnings("unchecked")
+    private <T> StateHandler<T> handler() {
+        return state == null ? null : (StateHandler<T>) stateHandlers.get(state);
     }
 
     private class StateHandler<T> implements EventHandler<Event, Response> {
@@ -256,7 +271,7 @@ public class StateMachine<Event, Response, Remote> implements EventHandler<Event
 
                     if (action != null) {
                         final Parameter[] parameters = action.getParameters();
-                        if (parameters.length != 1 || !meta.value().isAssignableFrom(parameters[0].getType()))
+                        if (parameters.length != 1 || !parameters[0].getType().isAssignableFrom(meta.value()))
                             throw new StateMachineException("action " + action.getName() + " on state " + name(state) + " does not take event " + meta.value());
                     }
 

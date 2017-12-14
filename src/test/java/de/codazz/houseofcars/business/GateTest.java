@@ -1,10 +1,11 @@
 package de.codazz.houseofcars.business;
 
-import de.codazz.houseofcars.GarageImplMock;
-import de.codazz.houseofcars.GarageImplTest;
+import de.codazz.houseofcars.GarageMock;
+import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.statemachine.AbstractStateMachineTest;
 import de.codazz.houseofcars.statemachine.StateMachineException;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,12 +14,13 @@ import org.junit.runners.Parameterized;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static de.codazz.houseofcars.domain.SpotTest.NUM_SPOTS;
+import static de.codazz.houseofcars.domain.SpotTest.NUM_TOTAL;
+import static org.junit.Assert.*;
 
 /** @author rstumm2s */
 @RunWith(Parameterized.class)
-public final class GateTest extends AbstractStateMachineTest<String, Boolean, Void> {
+public final class GateTest extends AbstractStateMachineTest<Gate.Event, Void, Void> {
     @Parameterized.Parameters
     public static Iterable data() {
         return Arrays.asList(new Object[][]{
@@ -26,7 +28,7 @@ public final class GateTest extends AbstractStateMachineTest<String, Boolean, Vo
         });
     }
 
-    static GarageImplMock garage;
+    static GarageMock garage;
 
     public GateTest(final boolean lazy) {
         super(Gate.class, lazy);
@@ -34,7 +36,7 @@ public final class GateTest extends AbstractStateMachineTest<String, Boolean, Vo
 
     @BeforeClass
     public static void setUpClass() throws FileNotFoundException {
-        garage = new GarageImplMock();
+        garage = new GarageMock();
     }
 
     @AfterClass
@@ -42,9 +44,10 @@ public final class GateTest extends AbstractStateMachineTest<String, Boolean, Vo
         garage.close();
     }
 
+    @Before
     @Override
     public void setUp() throws StateMachineException {
-        garage.reset(GarageImplTest.NUM_TOTAL, GarageImplTest.NUM_SPOTS);
+        garage.reset(NUM_TOTAL, NUM_SPOTS);
         super.setUp();
         machine().start();
     }
@@ -52,12 +55,15 @@ public final class GateTest extends AbstractStateMachineTest<String, Boolean, Vo
     /** HOC-4 */
     @Test
     public void US4() throws StateMachineException {
-        assertTrue(machine().onEvent("ABXY0000").get());
-        assertEquals(Gate.Open.class, machine().state().getClass());
-        assertEquals(0, garage.numParking());
-
-        machine().onEvent("ABXY0000");
         assertEquals(Gate.class, machine().state().getClass());
-        assertEquals(1, garage.numParking());
+        assertEquals(0, Vehicle.countPending());
+
+        assertFalse(machine().onEvent(((Gate) machine().state()).new OpenedEvent()).isPresent());
+        assertEquals(Gate.Open.class, machine().state().getClass());
+        assertEquals(0, Vehicle.count(Vehicle.Lifecycle.LookingForSpot.class));
+
+        assertFalse(machine().onEvent(((Gate.Open) machine().state()).new EnteredEvent("ABXY0000")).isPresent());
+        assertEquals(Gate.class, machine().state().getClass());
+        assertEquals(1, Vehicle.count(Vehicle.Lifecycle.LookingForSpot.class));
     }
 }
