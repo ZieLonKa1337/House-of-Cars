@@ -14,7 +14,6 @@ import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.NamedQuery;
 import javax.persistence.Transient;
-import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
@@ -31,6 +30,7 @@ import java.util.Optional;
 public class Vehicle extends Entity {
     private static final Logger log = LoggerFactory.getLogger(Vehicle.class);
 
+    /** @return the number of known vehicles */
     public static long count() {
         return Garage.instance().persistence.execute(em -> em
             .createNamedQuery("Vehicle.count", Long.class)
@@ -86,25 +86,22 @@ public class Vehicle extends Entity {
     }
 
     @Transient
-    transient Lifecycle lifecycle;
+    private transient Lifecycle lifecycle;
 
     @SuppressWarnings("unchecked")
     public Lifecycle state() throws StateMachineException, ClassNotFoundException {
         return state((Class<? extends Lifecycle.PersistentState>) Class.forName(Lifecycle.class.getName() + "$" + state));
     }
 
+    /** restore to specified state */
     Lifecycle state(final Class<? extends Lifecycle.PersistentState> state) throws StateMachineException {
         this.state = state.getSimpleName();
         if (lifecycle == null || !lifecycle.state().getClass().equals(state)) {
             lifecycle = new Lifecycle(state);
 
-            final Optional<Parking> parking = Parking.find(Vehicle.this);
-            parking.ifPresent(p -> lifecycle.parking = p);
-
+            // call with correct @OnEnter parameter
             if (state.equals(Lifecycle.Parking.class)) {
-                final Spot spot = parking.orElseThrow(() -> new IllegalStateException("likely bug in test code"))
-                    .spot().orElse(null);
-                lifecycle.start(spot);
+                lifecycle.start(lifecycle.parking.spot().orElse(null));
             } else {
                 lifecycle.start();
             }
@@ -113,7 +110,7 @@ public class Vehicle extends Entity {
     }
 
     public class Lifecycle extends StateMachine<Lifecycle.Event, Void, Void> {
-        private de.codazz.houseofcars.domain.Parking parking;
+        private de.codazz.houseofcars.domain.Parking parking = de.codazz.houseofcars.domain.Parking.find(Vehicle.this).orElse(null);
 
         protected Lifecycle(final Class<?> root) throws StateMachineException {
             super(root, true, null, 4);
@@ -150,8 +147,7 @@ public class Vehicle extends Entity {
         /** the vehicle is inside the garage, looking for a spot */
         @State
         public class LookingForSpot extends PersistentState {
-            private Spot spot = parking == null ? null : parking.spot()
-                .orElseThrow(() -> new IllegalStateException("cannot restore spot from " + parking.vehicle() + "'s Parking from " + parking.started()));
+            private Spot spot = parking == null ? null : parking.spot().orElse(null);
 
             @OnEnter
             @Override

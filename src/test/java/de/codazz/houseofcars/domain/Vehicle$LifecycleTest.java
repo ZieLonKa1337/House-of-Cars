@@ -41,10 +41,9 @@ public class Vehicle$LifecycleTest extends AbstractStateMachineTest<Vehicle.Life
     @SuppressWarnings("unchecked")
     @Override
     protected StateMachine<Vehicle.Lifecycle.Event, Void, Void> instantiate(final Class root) throws StateMachineException {
-        // set up past Parkings to restore
-        if (root.equals(Vehicle.Lifecycle.Parking.class) ||
-            root.equals(Vehicle.Lifecycle.Leaving.class)
-        ) {
+        if (comesAfter(root, Vehicle.Lifecycle.LookingForSpot.class)) {
+            // set up past Parkings to restore
+
             final Parking parking = garage.persistence.transact((em, __) -> {
                 final Parking p = new Parking(vehicle);
                 em.persist(p);
@@ -60,7 +59,6 @@ public class Vehicle$LifecycleTest extends AbstractStateMachineTest<Vehicle.Life
             }
         }
 
-        vehicle.lifecycle = null;
         return vehicle.state(root);
     }
 

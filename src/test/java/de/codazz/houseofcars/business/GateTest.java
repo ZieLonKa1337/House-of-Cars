@@ -62,7 +62,7 @@ public final class GateTest extends AbstractStateMachineTest<Gate.Event, Void, V
         assertEquals(Gate.Open.class, machine().state().getClass());
         assertEquals(0, Vehicle.count(Vehicle.Lifecycle.LookingForSpot.class));
 
-        assertFalse(machine().onEvent(((Gate.Open) machine().state()).new EnteredEvent("ABXY0000")).isPresent());
+        assertFalse(machine().onEvent(((Gate.Open) machine().state()).new EnteredEvent("US4")).isPresent());
         assertEquals(Gate.class, machine().state().getClass());
         assertEquals(1, Vehicle.count(Vehicle.Lifecycle.LookingForSpot.class));
     }
