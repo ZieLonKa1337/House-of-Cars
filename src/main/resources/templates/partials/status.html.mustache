@@ -16,7 +16,7 @@
         let target = document.currentScript.previousElementSibling;
 
         let socket;
-        function connect() {
+        (function connect() {
             socket = new WebSocket('ws://' + window.location.host + '/ws/status');
             socket.onclose = connect;
             socket.onmessage = function (msg) {
@@ -29,8 +29,7 @@
                         throw 'unknown message type: ' + data.type;
                 }
             };
-        };
-        connect();
+        })();
 
         function update(values) {
             target.innerHTML =

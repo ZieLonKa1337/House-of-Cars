@@ -2,6 +2,7 @@ package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
+import de.codazz.houseofcars.websocket.subprotocol.History;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
 import de.codazz.houseofcars.websocket.subprotocol.VGate;
 import spark.ModelAndView;
@@ -66,13 +67,14 @@ public class Garage implements Runnable, Closeable {
         staticFiles.location("/static");
 
         webSocket("/ws/status", Status.class);
+        webSocket("/ws/status/history", History.class);
         webSocket("/ws/gate", Gate.class);
         webSocket("/ws/vgate", VGate.class);
 
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
-        get("/", new TemplateViewRoute() {
+        get("/dashboard", new TemplateViewRoute() {
             final Map<String, Object> templateValues = new HashMap<>();
-            final ModelAndView modelAndView = modelAndView(templateValues, "index.html.mustache");
+            final ModelAndView modelAndView = modelAndView(templateValues, "dashboard.html.mustache");
 
             @Override
             public ModelAndView handle(final Request request, final Response response) {
@@ -97,6 +99,9 @@ public class Garage implements Runnable, Closeable {
         if (spark) {
             spark = false;
             stop();
+
+            Status.close();
+            History.close();
         }
         persistence.close();
 

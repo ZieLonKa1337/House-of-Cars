@@ -18,4 +18,9 @@ public class Message {
     public String toJson() {
         return json.get().toJson(this);
     }
+
+    @Override
+    public String toString() {
+        return toJson();
+    }
 }

@@ -20,7 +20,7 @@
         let gate = document.getElementById('gate');
 
         let socket;
-        function connect() {
+        (function connect() {
             socket = new WebSocket('ws://' + window.location.host + '/ws/vgate');
             socket.onclose = connect;
             socket.onmessage = function (msg) {
@@ -38,15 +38,13 @@
                             state(false);
                             socket.send(JSON.stringify({
                                 type: 'entered',
-                                license: _vgate.requestOpen.license,
-                                simulate: true
+                                license: _vgate.requestOpen.license
                             }));
                         }, 1000 + Math.random() * 2000);
                         break;
                 }
             };
-        }
-        connect();
+        })();
 
         function state(open) {
             let state = open ? 'open' : 'closed';

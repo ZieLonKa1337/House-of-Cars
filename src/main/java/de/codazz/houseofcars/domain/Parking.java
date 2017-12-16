@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory;
 import javax.persistence.Column;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
+import javax.persistence.TypedQuery;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /** @author rstumm2s */
@@ -19,11 +21,51 @@ public class Parking extends Activity {
 
     /** @return the current {@link Parking Parking} activity of the given vehicle */
     public static Optional<Parking> find(final Vehicle vehicle) {
-        return Garage.instance().persistence.execute(em -> em
+        return Garage.instance().persistence.execute(em -> em)
             .createNamedQuery("Parking.findCurrent", Parking.class)
             .setMaxResults(1)
             .setParameter("vehicle", vehicle)
-            .getResultStream()).findFirst();
+            .getResultStream().findFirst();
+    }
+
+    public static List<Parking> findSince(
+        final ZonedDateTime started,
+        final ZonedDateTime parked,
+        final ZonedDateTime freed,
+        final ZonedDateTime finished
+    ) {
+        final StringBuilder jpql = new StringBuilder("SELECT p FROM Parking p WHERE 1 = 1 ");
+
+        if (started != null) {
+            jpql.append("AND p.started >= :started ");
+        }
+        if (parked != null) {
+            jpql.append("AND p.parked >= :parked ");
+        }
+        if (freed != null) {
+            jpql.append("AND p.freed >= :freed ");
+        }
+        if (finished != null) {
+            jpql.append("AND p.finished >= :finished ");
+        }
+
+        final TypedQuery<Parking> query = Garage.instance().persistence.execute(em -> em)
+            .createQuery(jpql.toString(), Parking.class);
+
+        if (started != null) {
+            query.setParameter("started", started);
+        }
+        if (parked != null) {
+            query.setParameter("parked", parked);
+        }
+        if (freed != null) {
+            query.setParameter("freed", freed);
+        }
+        if (finished != null) {
+            query.setParameter("finished", finished);
+        }
+
+        return query.getResultList();
     }
 
     @ManyToOne(optional = false)
@@ -72,8 +114,8 @@ public class Parking extends Activity {
     }
 
     /** @return when the vehicle left its spot */
-    public ZonedDateTime freed() {
-        return freed;
+    public Optional<ZonedDateTime> freed() {
+        return Optional.ofNullable(freed);
     }
 
     public void free() {
@@ -99,5 +141,21 @@ public class Parking extends Activity {
     public void finish() {
         if (freed == null) throw new IllegalStateException();
         super.finish();
+    }
+
+    public ZonedDateTime since() {
+        return since(Vehicle.State.of(this));
+    }
+
+    // TODO refactor to [StateMachine/Activity].lastEvent() with properly persistent state machines
+    /** @return when the given state was entered */
+    public ZonedDateTime since(final Vehicle.State state) {
+        switch (state) {
+            case Away: return finished().get();
+            case LookingForSpot: return started();
+            case Parking: return parked().get();
+            case Leaving: return freed().get();
+            default: throw new AssertionError("forgot a state?");
+        }
     }
 }

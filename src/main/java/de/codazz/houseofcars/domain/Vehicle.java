@@ -2,6 +2,9 @@ package de.codazz.houseofcars.domain;
 
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.statemachine.EnumStateMachine;
+import de.codazz.houseofcars.websocket.subprotocol.History;
+import de.codazz.houseofcars.websocket.subprotocol.Status;
+import org.hibernate.classic.Lifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +12,7 @@ import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.NamedQuery;
 import javax.persistence.Transient;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -50,11 +54,35 @@ public class Vehicle extends Entity {
             .getSingleResult());
     }
 
-    public static long count(final State state) {
+    public static long count(final Vehicle.State state) {
         return Garage.instance().persistence.execute(em -> em
             .createNamedQuery("Vehicle.countState", Long.class)
             .setParameter("state", state.name())
             .getSingleResult());
+    }
+
+    /** @param time when the state was entered
+     * @return the number of vehicles in the given state at the given time */
+    public static long count(final Vehicle.State state, final ZonedDateTime time) {
+        switch (state) {
+            case Away: return Garage.instance().persistence.execute(em -> em)
+                .createQuery("SELECT COUNT(v) FROM Vehicle v, Parking p WHERE p.vehicle = v AND p.finished <= :time ", Long.class)
+                .setParameter("time", time)
+                .getSingleResult();
+            case LookingForSpot: return Garage.instance().persistence.execute(em -> em)
+                .createQuery("SELECT COUNT(v) FROM Vehicle v, Parking p WHERE p.vehicle = v AND p.started <= :time AND p.parked IS NULL", Long.class)
+                .setParameter("time", time)
+                .getSingleResult();
+            case Parking: return Garage.instance().persistence.execute(em -> em)
+                .createQuery("SELECT COUNT(v) FROM Vehicle v, Parking p WHERE p.vehicle = v AND p.parked <= :time AND p.freed IS NULL", Long.class)
+                .setParameter("time", time)
+                .getSingleResult();
+            case Leaving: return Garage.instance().persistence.execute(em -> em)
+                .createQuery("SELECT COUNT(v) FROM Vehicle v, Parking p WHERE p.vehicle = v AND p.freed <= :time AND p.finished IS NULL", Long.class)
+                .setParameter("time", time)
+                .getSingleResult();
+            default: throw new AssertionError("forgot a state?");
+        }
     }
 
     @Id
@@ -82,7 +110,7 @@ public class Vehicle extends Entity {
     }
 
     @Transient
-    private transient Lifecycle lifecycle;
+    private transient volatile Lifecycle lifecycle;
 
     /** do not cache! may be a new instance */
     public Lifecycle state() {
@@ -105,6 +133,7 @@ public class Vehicle extends Entity {
             super(state, data);
             Vehicle.this.state = state.name();
             state.onEnter(data);
+            Vehicle.this.state = Garage.instance().persistence.transact((em, __) -> Vehicle.this.state = state.name());
         }
 
         public abstract class Event extends CheckedEvent implements Vehicle.Event {
@@ -167,6 +196,7 @@ public class Vehicle extends Entity {
                     em.persist(p);
                     return p;
                 });
+                History.update();
             }
 
             State on(final Lifecycle.ParkedEvent event) {
@@ -187,6 +217,7 @@ public class Vehicle extends Entity {
                     data.parking.park(data.spot);
                     return null;
                 });
+                Status.update();
             }
 
             @Override
@@ -195,6 +226,7 @@ public class Vehicle extends Entity {
                     data.parking.free();
                     return null;
                 });
+                Status.update();
             }
 
             State on(final Lifecycle.LeftSpotEvent __) {
@@ -209,6 +241,7 @@ public class Vehicle extends Entity {
                     data.parking.finish();
                     return null;
                 });
+                History.update();
             }
 
             State on(final Lifecycle.LeftEvent __) {
@@ -225,6 +258,25 @@ public class Vehicle extends Entity {
                 data.vehicle().state = name();
                 return null;
             });
+        }
+
+        public static State of(final Parking parking) {
+            return of(parking, ZonedDateTime.now());
+        }
+
+        /** @param time get the state at this time
+         * @return the corresponding vehicle state */
+        public static State of(final Parking parking, final ZonedDateTime time) {
+            if (parking.finished().isPresent() && parking.finished().get().compareTo(time) <= 0) {
+                return State.Away;
+            }
+            if (parking.freed().isPresent() && parking.freed().get().compareTo(time) <= 0) {
+                return State.Leaving;
+            }
+            if (parking.parked().isPresent() && parking.parked().get().compareTo(time) <= 0) {
+                return State.Parking;
+            }
+            return State.LookingForSpot;
         }
     }
 

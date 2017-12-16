@@ -47,8 +47,6 @@ public class VGate extends Gate {
                             log.error("failed to update state of {}", vehicle.license());
                             throw new RuntimeException(e);
                         }
-
-                        Status.update();
                     }
                 }, delay);
             } break;

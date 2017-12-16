@@ -1,0 +1,97 @@
+<!-- rstumm2s -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+    <title>House of Cars Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.bundle.min.js"></script>
+</head>
+<body>
+<h1>Dashboard</h1>
+
+<canvas id="graph"></canvas>
+<script>
+let __dashboard = (function () {
+    Chart.controllers.lineWithCurrent = Chart.controllers.line.extend({
+        initialize: function () {
+            Chart.controllers.line.prototype.initialize.apply(this, arguments);
+        },
+        draw: function (ease) {
+            Chart.controllers.line.prototype.draw.apply(this, arguments);
+
+            let dataset = this.getDataset();
+            let last = dataset.data[dataset.data.length - 1];
+            if (!last) return;
+
+            let metaData = this.getMeta().data[this.getMeta().data.length - 1];
+            let x = metaData._model.x;
+            let y = this.calculatePointY(last.y * ease);
+
+            this.chart.chart.canvas.ctx = this.chart.chart.canvas.getContext('2d');
+            this.chart.chart.canvas.ctx.beginPath();
+            this.chart.chart.canvas.ctx.moveTo(x, y);
+            this.chart.chart.canvas.ctx.strokeStyle = metaData._view.borderColor;
+            this.chart.chart.canvas.ctx.lineTo(this.chart.chart.width, y);
+            this.chart.chart.canvas.ctx.stroke();
+        }
+    });
+
+    let chart = new Chart(document.getElementById('graph'), {
+        type: 'lineWithCurrent',
+        data: {},
+        options: {
+            title: {
+                display: true,
+                text: 'State of Known Vehicles'
+            },
+            hover: {
+                mode: 'index',
+                intersect: false
+            },
+            tooltip: {
+                intersect: false
+            },
+            scales: {
+                xAxes: [{
+                    type: 'time'
+                }],
+                yAxes: [{
+                    ticks: {
+                        min: 0
+                    }
+                }]
+            }
+        }
+    });
+
+    let historySocket;
+    (function connectHistory() {
+        historySocket = new WebSocket('ws://' + window.location.host + '/ws/status/history');
+        historySocket.onclose = connectHistory;
+        historySocket.onmessage = function (msg) {
+            let data = JSON.parse(msg.data);
+            switch (data.type) {
+                case 'graph':
+                    chart.data.datasets = data.datasets;
+                    chart.update();
+                    break;
+                case 'graph-update':
+                    chart.data.datasets.forEach(function (it) {
+                        if (it.label == data.dataset) {
+                            it.data.push(data.datapoint);
+                        }
+                    });
+                    chart.update();
+                    break;
+            }
+        };
+    })();
+
+    return {
+        chart: chart
+    };
+})();
+</script>
+</body>
+</html>
