@@ -1,13 +1,13 @@
 package de.codazz.houseofcars.domain;
 
 import de.codazz.houseofcars.GarageMock;
-import de.codazz.houseofcars.statemachine.StateMachineException;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class SpotTest {
     }
 
     @Test
-    public void countFree() throws StateMachineException, ClassNotFoundException {
+    public void countFree() throws NoSuchMethodException, InvocationTargetException {
         assertEquals(NUM_TOTAL, Spot.countFree());
 
         int total = 0;
@@ -61,11 +61,11 @@ public class SpotTest {
             assertEquals(NUM_TOTAL - total, Spot.countFree());
             assertEquals(NUM_SPOTS.get(type).longValue(), Spot.countFree(type));
 
-            garage.park(type, Vehicle.Lifecycle.Parking.class, num);
+            garage.park(type, Vehicle.State.Parking, num);
             total += num;
             assertEquals(1, Spot.countFree(type));
 
-            garage.park(type, Vehicle.Lifecycle.Parking.class,1);
+            garage.park(type, Vehicle.State.Parking,1);
             total += 1;
             assertEquals(0, Spot.countFree(type));
         }
@@ -74,7 +74,7 @@ public class SpotTest {
     }
 
     @Test
-    public void countUsed() throws StateMachineException, ClassNotFoundException {
+    public void countUsed() throws NoSuchMethodException, InvocationTargetException {
         assertEquals(0, Spot.countUsed());
 
         int total = 0;
@@ -84,11 +84,11 @@ public class SpotTest {
             assertEquals(total, Spot.countUsed());
             assertEquals(0, Spot.countUsed(type));
 
-            garage.park(type, Vehicle.Lifecycle.Parking.class, num);
+            garage.park(type, Vehicle.State.Parking, num);
             total += num;
             assertEquals(num, Spot.countUsed(type));
 
-            garage.park(type, Vehicle.Lifecycle.Parking.class, 1);
+            garage.park(type, Vehicle.State.Parking, 1);
             total += 1;
             assertEquals(num + 1, Spot.countUsed(type));
         }
@@ -97,14 +97,14 @@ public class SpotTest {
     }
 
     @Test
-    public void anyFree() throws StateMachineException, ClassNotFoundException {
+    public void anyFree() throws NoSuchMethodException, InvocationTargetException {
         for (final Spot.Type type : Spot.Type.values()) {
             assertTrue(Spot.anyFree(type).isPresent());
 
-            garage.park(type, Vehicle.Lifecycle.Parking.class, NUM_SPOTS.get(type) - 1);
+            garage.park(type, Vehicle.State.Parking, NUM_SPOTS.get(type) - 1);
             assertTrue(Spot.anyFree(type).isPresent());
 
-            garage.park(type, Vehicle.Lifecycle.Parking.class, 1);
+            garage.park(type, Vehicle.State.Parking, 1);
             assertFalse(Spot.anyFree(type).isPresent());
         }
     }

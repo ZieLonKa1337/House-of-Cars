@@ -2,37 +2,23 @@ package de.codazz.houseofcars.business;
 
 import de.codazz.houseofcars.GarageMock;
 import de.codazz.houseofcars.domain.Vehicle;
-import de.codazz.houseofcars.statemachine.AbstractStateMachineTest;
-import de.codazz.houseofcars.statemachine.StateMachineException;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.io.FileNotFoundException;
-import java.util.Arrays;
+import java.lang.reflect.InvocationTargetException;
 
 import static de.codazz.houseofcars.domain.SpotTest.NUM_SPOTS;
 import static de.codazz.houseofcars.domain.SpotTest.NUM_TOTAL;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /** @author rstumm2s */
-@RunWith(Parameterized.class)
-public final class GateTest extends AbstractStateMachineTest<Gate.Event, Void, Void> {
-    @Parameterized.Parameters
-    public static Iterable data() {
-        return Arrays.asList(new Object[][]{
-            {false}, {true}
-        });
-    }
-
+public class GateTest {
     static GarageMock garage;
 
-    public GateTest(final boolean lazy) {
-        super(Gate.class, lazy);
-    }
+    Gate machine;
 
     @BeforeClass
     public static void setUpClass() throws FileNotFoundException {
@@ -45,25 +31,23 @@ public final class GateTest extends AbstractStateMachineTest<Gate.Event, Void, V
     }
 
     @Before
-    @Override
-    public void setUp() throws StateMachineException {
+    public void setUp() {
         garage.reset(NUM_TOTAL, NUM_SPOTS);
-        super.setUp();
-        machine().start();
+        machine = new Gate();
     }
 
     /** HOC-4 */
     @Test
-    public void US4() throws StateMachineException {
-        assertEquals(Gate.class, machine().state().getClass());
+    public void US4() throws NoSuchMethodException, InvocationTargetException {
+        assertEquals(Gate.State.Closed, machine.state());
         assertEquals(0, Vehicle.countPending());
 
-        assertFalse(machine().onEvent(((Gate) machine().state()).new OpenedEvent()).isPresent());
-        assertEquals(Gate.Open.class, machine().state().getClass());
-        assertEquals(0, Vehicle.count(Vehicle.Lifecycle.LookingForSpot.class));
+        machine.fire(new Gate.OpenedEvent());
+        assertEquals(Gate.State.Open, machine.state());
+        assertEquals(0, Vehicle.count(Vehicle.State.LookingForSpot));
 
-        assertFalse(machine().onEvent(((Gate.Open) machine().state()).new EnteredEvent("US4")).isPresent());
-        assertEquals(Gate.class, machine().state().getClass());
-        assertEquals(1, Vehicle.count(Vehicle.Lifecycle.LookingForSpot.class));
+        machine.fire(new Gate.EnteredEvent("US4"));
+        assertEquals(Gate.State.Closed, machine.state());
+        assertEquals(1, Vehicle.count(Vehicle.State.LookingForSpot));
     }
 }

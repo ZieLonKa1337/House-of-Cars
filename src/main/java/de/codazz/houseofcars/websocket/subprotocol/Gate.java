@@ -2,7 +2,6 @@ package de.codazz.houseofcars.websocket.subprotocol;
 
 import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.jsonbeans.JsonValue;
-import de.codazz.houseofcars.statemachine.StateMachineException;
 import de.codazz.houseofcars.websocket.Message;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -13,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,10 +26,9 @@ public class Gate {
     private final Map<Session, de.codazz.houseofcars.business.Gate> states = new ConcurrentHashMap<>();
 
     @OnWebSocketConnect
-    public void connected(final Session session) throws StateMachineException {
+    public void connected(final Session session) {
         log.debug("{} connected", session.getRemoteAddress());
-        final de.codazz.houseofcars.business.Gate state = new de.codazz.houseofcars.business.Gate(false);
-        state.start();
+        final de.codazz.houseofcars.business.Gate state = new de.codazz.houseofcars.business.Gate();
         states.put(session, state);
     }
 
@@ -40,7 +39,7 @@ public class Gate {
     }
 
     @OnWebSocketMessage
-    public void message(final Session session, final String message) throws IOException, StateMachineException {
+    public void message(final Session session, final String message) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         log.trace("{}: {}", session.getRemoteAddress(), message);
         final Message response = handle(jsonReader.parse(message), states.get(session));
         if (response != null) {
@@ -48,16 +47,15 @@ public class Gate {
         }
     }
 
-    protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) throws StateMachineException {
+    protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         switch (msg.getString("type")) {
             case "open-request":
-                assert state.state().getClass().equals(de.codazz.houseofcars.business.Gate.class);
                 return new OpenResponse(state.requestOpen(msg.getString("license")));
             case "opened":
-                state.onEvent(((de.codazz.houseofcars.business.Gate) state.state()).new OpenedEvent());
+                state.fire(new de.codazz.houseofcars.business.Gate.OpenedEvent());
                 return null;
             case "entered":
-                state.onEvent(((de.codazz.houseofcars.business.Gate.Open) state.state()).new EnteredEvent(msg.getString("license")));
+                state.fire(new de.codazz.houseofcars.business.Gate.EnteredEvent(msg.getString("license")));
                 return null;
             default:
                 return null;

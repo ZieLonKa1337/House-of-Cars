@@ -26,50 +26,50 @@ import java.util.Optional;
     "SELECT s FROM Spot s WHERE s.type = :type AND s NOT IN (SELECT DISTINCT p.spot FROM Parking p WHERE p.parked IS NOT NULL AND p.freed IS NULL)")
 public class Spot extends Entity {
     public static long count() {
-        return Garage.instance().persistence.execute(em -> em
+        return Garage.instance().persistence.execute(em -> em)
             .createNamedQuery("Spot.count", Long.class)
-            .getSingleResult());
+            .getSingleResult();
     }
 
     public static long count(final Type type) {
-        return Garage.instance().persistence.execute(em -> em
+        return Garage.instance().persistence.execute(em -> em)
             .createNamedQuery("Spot.countType", Long.class)
             .setParameter("type", type)
-            .getSingleResult());
+            .getSingleResult();
     }
 
     public static long countFree() {
-        return Garage.instance().persistence.execute(em -> em
+        return Garage.instance().persistence.execute(em -> em)
             .createNamedQuery("Spot.countFree", Long.class)
-            .getSingleResult());
+            .getSingleResult();
     }
 
     public static long countFree(final Type type) {
-        return Garage.instance().persistence.execute(em -> em
+        return Garage.instance().persistence.execute(em -> em)
             .createNamedQuery("Spot.countFreeType", Long.class)
             .setParameter("type", type)
-            .getSingleResult());
+            .getSingleResult();
     }
 
     public static long countUsed() {
-        return Garage.instance().persistence.execute(em -> em
+        return Garage.instance().persistence.execute(em -> em)
             .createNamedQuery("Spot.countUsed", Long.class)
-            .getSingleResult());
+            .getSingleResult();
     }
 
     public static long countUsed(final Type type) {
-        return Garage.instance().persistence.execute(em -> em
+        return Garage.instance().persistence.execute(em -> em)
             .createNamedQuery("Spot.countUsedType", Long.class)
             .setParameter("type", type)
-            .getSingleResult());
+            .getSingleResult();
     }
 
     public static Optional<Spot> anyFree(final Type type) {
-        return Garage.instance().persistence.execute(em -> em
+        return Garage.instance().persistence.execute(em -> em)
             .createNamedQuery("Spot.anyFree", Spot.class)
             .setParameter("type", type)
             .setMaxResults(1)
-            .getResultStream()).findFirst();
+            .getResultStream().findFirst();
     }
 
     @Id

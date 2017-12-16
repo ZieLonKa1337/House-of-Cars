@@ -4,12 +4,12 @@ import com.esotericsoftware.jsonbeans.JsonValue;
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
-import de.codazz.houseofcars.statemachine.StateMachineException;
 import de.codazz.houseofcars.websocket.Message;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -20,7 +20,7 @@ public class VGate extends Gate {
     private static final Logger log = LoggerFactory.getLogger(VGate.class);
 
     @Override
-    protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) throws StateMachineException {
+    protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         final Message response = super.handle(msg, state);
 
         // instead of implementing the spot license readers we will just make the vehicle park after a while
@@ -42,8 +42,8 @@ public class VGate extends Gate {
                             .getSingleResult());
 
                         try {
-                            vehicle.state().onEvent(((Vehicle.Lifecycle.LookingForSpot) vehicle.state().state()).new ParkedEvent(spot));
-                        } catch (final StateMachineException | ClassNotFoundException e) {
+                            vehicle.state().fire(vehicle.state().new ParkedEvent(spot));
+                        } catch (final NoSuchMethodException | InvocationTargetException e) {
                             log.error("failed to update state of {}", vehicle.license());
                             throw new RuntimeException(e);
                         }

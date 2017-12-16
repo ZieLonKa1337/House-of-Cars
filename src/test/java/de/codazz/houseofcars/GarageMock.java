@@ -2,28 +2,23 @@ package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
-import de.codazz.houseofcars.statemachine.StateMachineException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static de.codazz.houseofcars.domain.Vehicle$LifecycleTest.comesAfter;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 
 /** @author rstumm2s */
 public class GarageMock extends Garage {
-    public final Map<Spot.Type, Integer> numSpots;
-    public final ArrayList<Spot> spots;
+    public final ArrayList<Spot> spots = new ArrayList<>();
 
     public GarageMock() throws FileNotFoundException {
         super(ConfigImpl.load(new FileInputStream(ConfigImplTest.CONFIG)));
         persistence.executor = new ExecutorServiceMock();
-        this.numSpots = new HashMap<>();
-        spots = new ArrayList<>();
     }
 
     public void reset(final int numTotal, final Map<Spot.Type, Integer> numSpots) {
@@ -37,7 +32,6 @@ public class GarageMock extends Garage {
             }
             em.clear();
             // create spots
-            spots.clear();
             for (int i = 0; i < numTotal; i++) {
                 final Spot spot = new Spot(i < numSpots.get(Spot.Type.BIKE) ? Spot.Type.BIKE :
                     i < numSpots.get(Spot.Type.BIKE) + numSpots.get(Spot.Type.HANDICAP) ? Spot.Type.HANDICAP :
@@ -50,7 +44,7 @@ public class GarageMock extends Garage {
     }
 
     @SuppressWarnings("unchecked")
-    public Vehicle[] park(final Spot.Type type, final Class state, int n) throws ClassNotFoundException, StateMachineException {
+    public Vehicle[] park(final Spot.Type type, final Vehicle.State state, int n) throws NoSuchMethodException, InvocationTargetException {
         final Vehicle[] vehicles = new Vehicle[n];
         for (n -= 1; n >= 0; n--) {
             final Vehicle vehicle = Garage.instance().persistence.transact((em, __) -> {
@@ -66,29 +60,29 @@ public class GarageMock extends Garage {
             });
             vehicles[n] = vehicle;
 
-            final Vehicle.Lifecycle lifecycle = vehicle.state();
-            lifecycle.start();
+            final boolean cycle = state == Vehicle.State.Away;
 
-            if (comesAfter(state, Vehicle.Lifecycle.Away.class)) { // Away -> LookingForSpot
-                assertFalse(lifecycle.onEvent(((Vehicle.Lifecycle.Away) lifecycle.state()).new EnteredEvent()).isPresent());
-                assertEquals(Vehicle.Lifecycle.LookingForSpot.class, lifecycle.state().getClass());
+            assertSame(Vehicle.State.Away, vehicle.state().state());
+
+            if (cycle || state.ordinal() > Vehicle.State.Away.ordinal()) {
+                vehicle.state().fire(vehicle.state().new EnteredEvent());
+                assertSame(Vehicle.State.LookingForSpot, vehicle.state().state());
             }
-            if (comesAfter(state, Vehicle.Lifecycle.LookingForSpot.class)) { // LookingForSpot -> Parking
-                final Spot spot = Garage.instance().persistence.execute(em -> em
-                    .createNamedQuery("Spot.anyFree", Spot.class)
-                    .setMaxResults(1)
-                    .setParameter("type", type)
-                    .getSingleResult());
-                assertFalse(lifecycle.onEvent(((Vehicle.Lifecycle.LookingForSpot) lifecycle.state()).new ParkedEvent(spot)).isPresent());
-                assertEquals(Vehicle.Lifecycle.Parking.class, lifecycle.state().getClass());
+            if (cycle || state.ordinal() > Vehicle.State.LookingForSpot.ordinal()) {
+                final Spot spot = spots.stream()
+                    .filter(s -> s.type() == type)
+                    .findAny().orElseThrow(() -> new IllegalStateException("bug in test code?"));
+                spots.remove(spot);
+                vehicle.state().fire(vehicle.state().new ParkedEvent(spot));
+                assertSame(Vehicle.State.Parking, vehicle.state().state());
             }
-            if (comesAfter(state, Vehicle.Lifecycle.Parking.class)) { // Parking -> Leaving
-                assertFalse(lifecycle.onEvent(((Vehicle.Lifecycle.Parking) lifecycle.state()).new LeftSpotEvent()).isPresent());
-                assertEquals(Vehicle.Lifecycle.Leaving.class, lifecycle.state().getClass());
+            if (cycle || state.ordinal() > Vehicle.State.Parking.ordinal()) {
+                vehicle.state().fire(vehicle.state().new LeftSpotEvent());
+                assertSame(Vehicle.State.Leaving, vehicle.state().state());
             }
-            if (comesAfter(state, Vehicle.Lifecycle.Leaving.class)) { // Leaving -> Away
-                assertFalse(lifecycle.onEvent(((Vehicle.Lifecycle.Leaving) lifecycle.state()).new LeftEvent()).isPresent());
-                assertEquals(Vehicle.Lifecycle.Away.class, lifecycle.state().getClass());
+            if (cycle) {
+                vehicle.state().fire(vehicle.state().new LeftEvent());
+                assertSame(Vehicle.State.Away, vehicle.state().state());
             }
         }
         return vehicles;

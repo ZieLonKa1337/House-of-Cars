@@ -3,25 +3,62 @@ package de.codazz.houseofcars.business;
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
-import de.codazz.houseofcars.statemachine.OnEvent;
-import de.codazz.houseofcars.statemachine.RootStateMachine;
-import de.codazz.houseofcars.statemachine.State;
-import de.codazz.houseofcars.statemachine.StateMachineException;
+import de.codazz.houseofcars.statemachine.EnumStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
+
 /** @author rstumm2s */
-@State(root = true, end = true)
-@OnEvent(value = Gate.OpenedEvent.class, next = Gate.Open.class)
-public class Gate extends RootStateMachine<Gate.Event, Void, Void> {
+public class Gate extends EnumStateMachine<Gate.State, Gate.Event, Void> {
     private static final Logger log = LoggerFactory.getLogger(Gate.class);
 
-    /** as state */
-    public Gate() throws StateMachineException {}
+    public Gate() {
+        super(State.Closed, null);
+    }
 
-    /** as state machine */
-    public Gate(final boolean lazy) throws StateMachineException {
-        super(Gate.class, lazy, null, 2);
+    public enum State implements de.codazz.houseofcars.statemachine.State<Event, Void> {
+        Closed {
+            State on(final OpenedEvent __) {
+                return Open;
+            }
+        },
+        Open {
+            State on(final EnteredEvent event) {
+                final Vehicle vehicle = Garage.instance().persistence.transact((em, __) -> {
+                    Vehicle v = em.find(Vehicle.class, event.license);
+                    if (v == null) {
+                        log.trace("new vehicle: {}", event.license);
+                        v = new Vehicle(event.license);
+                        em.persist(v);
+                    }
+                    log.trace("{} entered", event.license);
+                    return v;
+                });
+
+                try {
+                    vehicle.state().fire(vehicle.state().new EnteredEvent());
+                } catch (final NoSuchMethodException | InvocationTargetException e) {
+                    log.error("failed to mutate state of vehicle {}", event.license);
+                }
+
+                return Closed;
+            }
+        }
+    }
+
+    public static abstract class Event {}
+
+    public static class OpenedEvent extends Event {}
+
+    /** a vehicle entered the garage
+     * and the gate has closed again */
+    public static class EnteredEvent extends Event {
+        public final String license;
+
+        public EnteredEvent(final String license) {
+            this.license = license;
+        }
     }
 
     /** the gate sees a vehicle's license
@@ -34,44 +71,5 @@ public class Gate extends RootStateMachine<Gate.Event, Void, Void> {
             .getSingleResult());
         log.trace("requested permission for {}: {}", license, permission);
         return permission;
-    }
-
-    public abstract class Event {}
-
-    /** the gate is open */
-    public class OpenedEvent extends Event {}
-
-    @State
-    public class Open {
-        @OnEvent(value = EnteredEvent.class, next = Gate.class)
-        void onEntered(final EnteredEvent event) {
-            final Vehicle vehicle = Garage.instance().persistence.transact((em, __) -> {
-                Vehicle v = em.find(Vehicle.class, event.license);
-                if (v == null) {
-                    log.trace("new vehicle: {}", event.license);
-                    v = new Vehicle(event.license);
-                    em.persist(v);
-                }
-                log.trace("{} entered", event.license);
-                return v;
-            });
-
-            try {
-                vehicle.state().onEvent(((Vehicle.Lifecycle.Away) vehicle.state().state()).new EnteredEvent());
-            } catch (final StateMachineException | ClassNotFoundException e) {
-                log.error("failed to mutate state of vehicle {}", event.license);
-                throw new RuntimeException(e);
-            }
-        }
-
-        /** a vehicle entered the garage
-         * and the gate has closed again */
-        public class EnteredEvent extends Event {
-            public final String license;
-
-            public EnteredEvent(final String license) {
-                this.license = license;
-            }
-        }
     }
 }
