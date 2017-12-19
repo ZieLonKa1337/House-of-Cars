@@ -51,7 +51,7 @@ public class SpotTest {
     }
 
     @Test
-    public void countFree() throws NoSuchMethodException, InvocationTargetException {
+    public void countFree() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         assertEquals(NUM_TOTAL, Spot.countFree());
 
         int total = 0;
@@ -74,7 +74,7 @@ public class SpotTest {
     }
 
     @Test
-    public void countUsed() throws NoSuchMethodException, InvocationTargetException {
+    public void countUsed() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         assertEquals(0, Spot.countUsed());
 
         int total = 0;
@@ -97,7 +97,7 @@ public class SpotTest {
     }
 
     @Test
-    public void anyFree() throws NoSuchMethodException, InvocationTargetException {
+    public void anyFree() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         for (final Spot.Type type : Spot.Type.values()) {
             assertTrue(Spot.anyFree(type).isPresent());
 

@@ -18,6 +18,10 @@ import java.util.Properties;
 public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
     private final String persistenceUnitName, persistenceProviderClassName;
 
+    public PerstistenceUnitInfoImpl(final String persistenceProviderClassName) {
+        this("default", persistenceProviderClassName);
+    }
+
     public PerstistenceUnitInfoImpl(final String persistenceUnitName, final String persistenceProviderClassName) {
         this.persistenceUnitName = persistenceUnitName;
         this.persistenceProviderClassName = persistenceProviderClassName;
@@ -72,9 +76,11 @@ public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
     @Override
     public List<String> getManagedClassNames() {
         final List<String> classes = new ArrayList<>();
-        classes.add("de.codazz.houseofcars.domain.Parking");
         classes.add("de.codazz.houseofcars.domain.Spot");
+        classes.add("de.codazz.houseofcars.domain.parking");
         classes.add("de.codazz.houseofcars.domain.Vehicle");
+        classes.add("de.codazz.houseofcars.domain.vehicle_state");
+        classes.add("de.codazz.houseofcars.domain.VehicleTransition");
         return Collections.unmodifiableList(classes);
     }
 

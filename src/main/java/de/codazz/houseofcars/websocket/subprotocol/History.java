@@ -1,8 +1,8 @@
 package de.codazz.houseofcars.websocket.subprotocol;
 
-import com.sun.corba.se.impl.orbutil.graph.Graph;
-import de.codazz.houseofcars.domain.Parking;
+import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Vehicle;
+import de.codazz.houseofcars.domain.VehicleTransition;
 import de.codazz.houseofcars.websocket.Broadcast;
 import de.codazz.houseofcars.websocket.Message;
 import org.eclipse.jetty.websocket.api.Session;
@@ -10,15 +10,16 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /** @author rstumm2s */
 @WebSocket
@@ -61,19 +62,28 @@ public class History extends Broadcast {
         }
         log.trace("updating. last updated {}", updated.isPresent() ? updated.get() : "never");
 
-        final List<GraphUpdate> updates = new ArrayList<>(); // XXX gc
-        Parking.findSince(updated.orElse(null), null, null, null).forEach(parking -> {
-            // FIXME does not notice when, for example, LookingForSpot goes back to 0 (no iteration) => call findSince for each state?
-            // FIXME does not notice finished parkings...
-            // TODO should we include away vehicles that have never parked yet? (Vehicles without Parkings)
-            final Vehicle.State state = Vehicle.State.of(parking);
-            final ZonedDateTime t = parking.since(state);
-            updates.add(new GraphUpdate(
-                state.name(),
-                new Datapoint(t, (int) Vehicle.count(state, t))));
-        });
+        final List<GraphUpdate> updates; {
+            final StringBuilder jpql = new StringBuilder("SELECT t FROM VehicleTransition t\n"); // XXX gc
 
-        updates.sort(Comparator.comparing(it -> it.datapoint.t));
+            updated.ifPresent(__ -> jpql.append("WHERE t.time > :time\n"));
+
+            final TypedQuery<VehicleTransition> updatesQuery = Garage.instance().persistence.execute(em -> em)
+                .createQuery(jpql.append("ORDER BY t.time").toString(), VehicleTransition.class);
+
+            updated.ifPresent(time -> updatesQuery.setParameter("time", time));
+
+            updates = Garage.instance().persistence.execute(__ -> updatesQuery.getResultList()).stream()
+                .map(transition -> {
+                    final Vehicle.State state = transition.state();
+                    final ZonedDateTime time = transition.time();
+
+                    return new GraphUpdate(state.name(), new Datapoint(
+                        time, Vehicle.count(state, time)
+                    ));
+                })
+                .collect(Collectors.toList());
+        }
+
         synchronized (instance.graph) {
             updates.forEach(it -> instance.graph.update(it.dataset, it.datapoint));
         }

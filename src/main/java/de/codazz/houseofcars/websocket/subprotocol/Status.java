@@ -34,6 +34,7 @@ public class Status extends Broadcast {
      * and all below paths {@code /ws/status/*}
      * @see History#update() */
     public static void update() {
+        if (instance == null) return; // XXX for testing
         instance.broadcast(instance.newUpdate());
         History.update();
     }

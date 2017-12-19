@@ -2,28 +2,64 @@ package de.codazz.houseofcars.domain;
 
 import de.codazz.houseofcars.Garage;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
+import javax.persistence.PostLoad;
+import javax.persistence.Table;
+import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
 @NamedQuery(name = "Spot.count", query =
-    "SELECT COUNT(s) FROM Spot s")
+    "SELECT COUNT(s) " +
+    "FROM Spot s")
 @NamedQuery(name = "Spot.countType", query =
-    "SELECT COUNT(s) FROM Spot s WHERE s.type = :type")
+    "SELECT COUNT(s) " +
+    "FROM Spot s " +
+    "WHERE s.type = :type")
 @NamedQuery(name = "Spot.countFree", query =
-    "SELECT COUNT(s) FROM Spot s WHERE s NOT IN (SELECT DISTINCT p.spot FROM Parking p WHERE p.parked IS NOT NULL AND p.freed IS NULL)")
+    "SELECT COUNT(s) FROM Spot s " +
+    "WHERE NOT EXISTS (" +
+    " SELECT t" +
+    " FROM parking t" +
+    " WHERE t.spot_id = s.id)")
 @NamedQuery(name = "Spot.countFreeType", query =
-    "SELECT COUNT(s) FROM Spot s WHERE s.type = :type AND s NOT IN (SELECT DISTINCT p.spot FROM Parking p WHERE p.parked IS NOT NULL AND p.freed IS NULL)")
+    "SELECT COUNT(s) FROM Spot s " +
+    "WHERE s.type = :type" +
+    " AND NOT EXISTS (" +
+    "  SELECT t" +
+    "  FROM parking t" +
+    "  WHERE t.spot_id = s.id)")
 @NamedQuery(name = "Spot.countUsed", query =
-    "SELECT COUNT(p) FROM Parking p WHERE p.freed IS NULL")
+    "SELECT COUNT(s) " +
+    "FROM Spot s " +
+    "WHERE EXISTS (" +
+    " SELECT t" +
+    " FROM parking t" +
+    " WHERE t.spot_id = s.id)")
 @NamedQuery(name = "Spot.countUsedType", query =
-    "SELECT COUNT(p) FROM Parking p WHERE p.freed IS NULL AND p.spot.type = :type")
+    "SELECT COUNT(s) " +
+    "FROM Spot s " +
+    "WHERE s.type = :type" +
+    " AND EXISTS (" +
+    "  SELECT t" +
+    "  FROM parking t" +
+    "  WHERE t.spot_id = s.id)")
 @NamedQuery(name = "Spot.anyFree", query =
-    "SELECT s FROM Spot s WHERE s.type = :type AND s NOT IN (SELECT DISTINCT p.spot FROM Parking p WHERE p.parked IS NOT NULL AND p.freed IS NULL)")
+    "SELECT s " +
+    "FROM Spot s " +
+    "WHERE s.type = :type" +
+    " AND NOT EXISTS (" +
+    "  SELECT t" +
+    "  FROM parking t" +
+    "  WHERE t.spot_id = s.id)")
 public class Spot extends Entity {
     public static long count() {
         return Garage.instance().persistence.execute(em -> em)
@@ -62,6 +98,15 @@ public class Spot extends Entity {
             .createNamedQuery("Spot.countUsedType", Long.class)
             .setParameter("type", type)
             .getSingleResult();
+    }
+
+    /** has no use except for testing */
+    static Optional<Spot> anyFree() {
+        for (Type type : Type.values()) {
+            final Optional<Spot> spot = anyFree(type);
+            if (spot.isPresent()) return spot;
+        }
+        return Optional.empty();
     }
 
     public static Optional<Spot> anyFree(final Type type) {
@@ -111,4 +156,16 @@ public class Spot extends Entity {
         BIKE,
         HANDICAP
     }
+}
+
+/** native view
+ * @author rstumm2s */
+@javax.persistence.Entity
+final class parking {
+    @Id
+    private int spot_id;
+    private String vehicle_license;
+    private ZonedDateTime since;
+
+    protected parking() {}
 }

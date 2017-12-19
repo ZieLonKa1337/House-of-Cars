@@ -10,14 +10,14 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 
 /** @author rstumm2s */
-public class Gate extends EnumStateMachine<Gate.State, Gate.Event, Void> {
+public class Gate extends EnumStateMachine<Gate.State, Void, Gate.Event> {
     private static final Logger log = LoggerFactory.getLogger(Gate.class);
 
     public Gate() {
         super(State.Closed, null);
     }
 
-    public enum State implements de.codazz.houseofcars.statemachine.State<Event, Void> {
+    public enum State implements de.codazz.houseofcars.statemachine.State<Void, Event> {
         Closed {
             State on(final OpenedEvent __) {
                 return Open;
@@ -37,8 +37,8 @@ public class Gate extends EnumStateMachine<Gate.State, Gate.Event, Void> {
                 });
 
                 try {
-                    vehicle.state().fire(vehicle.state().new EnteredEvent());
-                } catch (final NoSuchMethodException | InvocationTargetException e) {
+                    vehicle.state().new EnteredEvent().fire();
+                } catch (final InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
                     log.error("failed to mutate state of vehicle {}", event.license);
                 }
 
@@ -47,16 +47,33 @@ public class Gate extends EnumStateMachine<Gate.State, Gate.Event, Void> {
         }
     }
 
-    public static abstract class Event {}
+    /** marker interface */
+    public interface Event {}
 
-    public static class OpenedEvent extends Event {}
+    private abstract class GateEvent extends CheckedEvent implements Event {
+        protected GateEvent(final State state) {
+            super(state);
+        }
+
+        public void fire() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+            Gate.this.fire(this);
+        }
+    }
+
+    /** the gate has opened so a vehicle can drive in */
+    public class OpenedEvent extends GateEvent {
+        public OpenedEvent() {
+            super(State.Closed);
+        }
+    }
 
     /** a vehicle entered the garage
      * and the gate has closed again */
-    public static class EnteredEvent extends Event {
+    public class EnteredEvent extends GateEvent {
         public final String license;
 
         public EnteredEvent(final String license) {
+            super(State.Open);
             this.license = license;
         }
     }
@@ -64,12 +81,12 @@ public class Gate extends EnumStateMachine<Gate.State, Gate.Event, Void> {
     /** the gate sees a vehicle's license
      * and asks whether it is allowed in */
     public boolean requestOpen(final String license) {
-        if (Spot.countFree() == 0) return false;
-        final boolean permission = Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Vehicle.mayEnter", Boolean.class)
-            .setParameter("license", license)
-            .getSingleResult());
-        log.trace("requested permission for {}: {}", license, permission);
+        final boolean permission = Spot.countFree() != 0 &&
+             Garage.instance().persistence.execute(em -> em
+                .createNamedQuery("Vehicle.mayEnter", Boolean.class)
+                .setParameter("license", license)
+                .getSingleResult());
+        log.trace("permission for {}: {}", license, permission);
         return permission;
     }
 }

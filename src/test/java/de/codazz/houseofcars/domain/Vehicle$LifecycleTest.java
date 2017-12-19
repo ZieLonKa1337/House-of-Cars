@@ -8,9 +8,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.beans.Transient;
 import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
+import java.time.Clock;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static de.codazz.houseofcars.domain.SpotTest.NUM_SPOTS;
 import static de.codazz.houseofcars.domain.SpotTest.NUM_TOTAL;
@@ -21,7 +26,9 @@ import static org.junit.Assert.*;
 public class Vehicle$LifecycleTest {
     @Parameterized.Parameters
     public static Iterable data() {
-        return Arrays.asList(Vehicle.State.values());
+        final Vehicle.State[] states = Vehicle.State.values(), data = new Vehicle.State[states.length + 1];
+        System.arraycopy(Vehicle.State.values(), 0, data, 0, states.length);
+        return Arrays.asList(data);
     }
 
     static GarageMock garage;
@@ -50,55 +57,58 @@ public class Vehicle$LifecycleTest {
             final Vehicle v = new Vehicle("LifecycleTest");
             em.persist(v);
 
-            // set up past Parking to restore
-            final Parking parking;
-            switch (start) {
-                case Parking:
-                case Leaving:
-                    parking = new Parking(v);
-                    em.persist(parking);
-                    parking.park(Spot.anyFree(Spot.Type.CAR).orElseThrow(() -> new IllegalStateException("likely bug in test code")));
-                    break;
-                default:
-                    parking = null;
+            // set up parking vehicles to restore
+            if (start == null) return v; // none
+
+            final Vehicle.State.Data data = new Vehicle.State.Data();
+
+            if (start.ordinal() >= Vehicle.State.LookingForSpot.ordinal()) {
+                em.persist(new VehicleTransition(v, Vehicle.State.LookingForSpot, new Vehicle.State.Data()));
+                Transition.tick(Duration.ofMinutes(1));
             }
-            if (start == Vehicle.State.Leaving) {
-                parking.free();
+
+            if (start.ordinal() >= Vehicle.State.Parking.ordinal()) {
+                data.spot = Spot.anyFree().orElseThrow(AssertionError::new);
+                em.persist(new VehicleTransition(v, Vehicle.State.Parking, data));
+                Transition.tick(Duration.ofHours(2));
+            }
+
+            if (start.ordinal() >= Vehicle.State.Leaving.ordinal()) {
+                data.spot = null;
+                em.persist(new VehicleTransition(v, Vehicle.State.Leaving, data));
+                Transition.tick(Duration.ofMinutes(2));
+            }
+
+            if (start == Vehicle.State.Away) {
+                em.persist(new VehicleTransition(v, Vehicle.State.Away, data));
             }
 
             return v;
         });
-        vehicle.state(start);
     }
 
     @Test
-    public void lifecycle() throws NoSuchMethodException, InvocationTargetException {
-        if (start == Vehicle.State.Away) {
+    public void lifecycle() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        if (start == null || start == Vehicle.State.Away) {
             assertSame(Vehicle.State.Away, vehicle.state().state());
-            assertEquals(Vehicle.State.Away.name(), vehicle.persistentState());
         }
 
-        if (start.ordinal() < Vehicle.State.LookingForSpot.ordinal()) {
-            vehicle.state().fire(vehicle.state().new EnteredEvent());
+        if (start == null || start.ordinal() < Vehicle.State.LookingForSpot.ordinal()) {
+            vehicle.state().new EnteredEvent().fire();
             assertSame(Vehicle.State.LookingForSpot, vehicle.state().state());
-            assertEquals(Vehicle.State.LookingForSpot.name(), vehicle.persistentState());
         }
 
-        if (start.ordinal() < Vehicle.State.Parking.ordinal()) {
-            vehicle.state().fire(vehicle.state().new ParkedEvent(Spot.anyFree(Spot.Type.CAR)
-                .orElseThrow(() -> new IllegalStateException("likely bug in test code"))));
+        if (start == null || start.ordinal() < Vehicle.State.Parking.ordinal()) {
+            vehicle.state().new ParkedEvent(Spot.anyFree().orElseThrow(AssertionError::new)).fire();
             assertSame(Vehicle.State.Parking, vehicle.state().state());
-            assertEquals(Vehicle.State.Parking.name(), vehicle.persistentState());
         }
 
-        if (start.ordinal() < Vehicle.State.Leaving.ordinal()) {
-            vehicle.state().fire(vehicle.state().new LeftSpotEvent());
+        if (start == null || start.ordinal() < Vehicle.State.Leaving.ordinal()) {
+            vehicle.state().new LeftSpotEvent().fire();
             assertSame(Vehicle.State.Leaving, vehicle.state().state());
-            assertEquals(Vehicle.State.Leaving.name(), vehicle.persistentState());
         }
 
-        vehicle.state().fire(vehicle.state().new LeftEvent());
+        vehicle.state().new LeftEvent().fire();
         assertSame(Vehicle.State.Away, vehicle.state().state());
-        assertEquals(Vehicle.State.Away.name(), vehicle.persistentState());
     }
 }

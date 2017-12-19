@@ -1,6 +1,9 @@
 package de.codazz.houseofcars;
 
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.dialect.PostgreSQL95Dialect;
+import org.hibernate.dialect.PostgreSQLDialect;
+import org.hibernate.dialect.function.StandardSQLFunction;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 
 import javax.persistence.EntityManager;
@@ -33,12 +36,10 @@ public class Persistence implements Closeable {
         factoryProps.put(AvailableSettings.JPA_JDBC_USER, jdbcUser);
         factoryProps.put(AvailableSettings.JPA_JDBC_PASSWORD, jdbcPassword);
         entityManager = new HibernatePersistenceProvider()
-                .createContainerEntityManagerFactory(
-                        new PerstistenceUnitInfoImpl(
-                                "HouseOfCars",
-                                HibernatePersistenceProvider.class.getName()),
-                        factoryProps)
-                .createEntityManager();
+            .createContainerEntityManagerFactory(
+                new PerstistenceUnitInfoImpl(HibernatePersistenceProvider.class.getName()),
+                factoryProps)
+            .createEntityManager();
     }
 
     /** run async */

@@ -52,10 +52,10 @@ public class Gate {
             case "open-request":
                 return new OpenResponse(state.requestOpen(msg.getString("license")));
             case "opened":
-                state.fire(new de.codazz.houseofcars.business.Gate.OpenedEvent());
+                state.new OpenedEvent().fire();
                 return null;
             case "entered":
-                state.fire(new de.codazz.houseofcars.business.Gate.EnteredEvent(msg.getString("license")));
+                state.new EnteredEvent(msg.getString("license")).fire();
                 return null;
             default:
                 return null;

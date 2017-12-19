@@ -1,16 +1,5 @@
 create sequence hibernate_sequence start 1 increment 1;
 
-create table Parking (
-	started timestamptz not null,
-	OPTLOCK int8 not null,
-	finished timestamptz,
-	freed timestamptz,
-	parked timestamptz,
-	spot_id int4,
-	vehicle_license varchar(255) not null,
-	primary key (started)
-);
-
 create table Spot (
 	id int4 not null,
 	OPTLOCK int8 not null,
@@ -21,12 +10,55 @@ create table Spot (
 create table Vehicle (
 	license varchar(255) not null,
 	OPTLOCK int8 not null,
-	state varchar(255) not null,
 	primary key (license)
 );
 
-alter table Parking
-	add constraint FKjouk3ps197dyfof70mrc2vbk4 foreign key (spot_id)references Spot;
+create table VehicleTransition (
+	time timestamptz not null,
+	OPTLOCK int8 not null,
+	state varchar(255) not null,
+	spot_id int4,
+	vehicle_license varchar(255) not null,
+	primary key (time)
+);
 
-alter table Parking
-	add constraint FKsqoybondilp8ma15vuft5e586 foreign key (vehicle_license)references Vehicle;
+alter table VehicleTransition
+	add constraint FKfwx6x8epwf1v4meg57gifc5j1 foreign key (spot_id)references Spot;
+
+alter table VehicleTransition
+	add constraint FKqpjg4ijjfp76qofrp327h940c foreign key (vehicle_license)references Vehicle;
+
+--
+
+CREATE VIEW parking AS
+ SELECT
+  id AS spot_id,
+  vehicle_license,
+  time AS since
+ FROM Spot, VehicleTransition
+ WHERE id = spot_id
+  AND state = 'Parking'
+ ORDER BY time DESC;
+
+CREATE TYPE vehicle_state_t AS (
+ vehicle_license varchar(255),
+ state           varchar(255),
+ since           timestamptz
+);
+
+CREATE FUNCTION vehicle_state_at(timestamptz)
+RETURNS SETOF vehicle_state_t AS $$
+ SELECT DISTINCT ON (license)
+  license,
+  CASE WHEN state IS NULL THEN 'Away'::varchar(255) ELSE state END AS state,
+  time AS since
+ FROM Vehicle
+ LEFT JOIN VehicleTransition
+ ON VehicleTransition.vehicle_license = Vehicle.license
+  AND time <= $1
+ ORDER BY license, time DESC
+$$ LANGUAGE sql
+IMMUTABLE;
+
+CREATE VIEW vehicle_state AS
+ SELECT * FROM vehicle_state_at(CURRENT_TIMESTAMP);

@@ -38,15 +38,15 @@ public class GateTest {
 
     /** HOC-4 */
     @Test
-    public void US4() throws NoSuchMethodException, InvocationTargetException {
+    public void US4() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         assertEquals(Gate.State.Closed, machine.state());
         assertEquals(0, Vehicle.countPending());
 
-        machine.fire(new Gate.OpenedEvent());
+        machine.new OpenedEvent().fire();
         assertEquals(Gate.State.Open, machine.state());
         assertEquals(0, Vehicle.count(Vehicle.State.LookingForSpot));
 
-        machine.fire(new Gate.EnteredEvent("US4"));
+        machine.new EnteredEvent("US4").fire();
         assertEquals(Gate.State.Closed, machine.state());
         assertEquals(1, Vehicle.count(Vehicle.State.LookingForSpot));
     }

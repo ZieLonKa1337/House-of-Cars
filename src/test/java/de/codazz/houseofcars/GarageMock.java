@@ -26,10 +26,9 @@ public class GarageMock extends Garage {
         spots.ensureCapacity(numTotal);
         persistence.<Void>transact((em, __) -> {
             // clear
-            for (String clazz : new PerstistenceUnitInfoImpl(null, null).getManagedClassNames()) {
-                clazz = clazz.substring(clazz.lastIndexOf('.') + 1);
-                em.createQuery("DELETE FROM " + clazz).executeUpdate();
-            }
+            em.createQuery("DELETE FROM VehicleTransition").executeUpdate();
+            em.createQuery("DELETE FROM Vehicle").executeUpdate();
+            em.createQuery("DELETE FROM Spot").executeUpdate();
             em.clear();
             // create spots
             for (int i = 0; i < numTotal; i++) {
@@ -44,12 +43,12 @@ public class GarageMock extends Garage {
     }
 
     @SuppressWarnings("unchecked")
-    public Vehicle[] park(final Spot.Type type, final Vehicle.State state, int n) throws NoSuchMethodException, InvocationTargetException {
+    public Vehicle[] park(final Spot.Type type, final Vehicle.State state, int n) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         final Vehicle[] vehicles = new Vehicle[n];
         for (n -= 1; n >= 0; n--) {
             final Vehicle vehicle = Garage.instance().persistence.transact((em, __) -> {
                 final int numPlates = em.createQuery("SELECT COUNT(v) FROM Vehicle v", Long.class).getSingleResult().intValue();
-                final String license = String.format("AABB%04d", numPlates);
+                final String license = String.format("AAXY%04d", numPlates);
 
                 Vehicle v = em.find(Vehicle.class, license);
                 if (v == null) {
@@ -65,7 +64,7 @@ public class GarageMock extends Garage {
             assertSame(Vehicle.State.Away, vehicle.state().state());
 
             if (cycle || state.ordinal() > Vehicle.State.Away.ordinal()) {
-                vehicle.state().fire(vehicle.state().new EnteredEvent());
+                vehicle.state().new EnteredEvent().fire();
                 assertSame(Vehicle.State.LookingForSpot, vehicle.state().state());
             }
             if (cycle || state.ordinal() > Vehicle.State.LookingForSpot.ordinal()) {
@@ -73,15 +72,15 @@ public class GarageMock extends Garage {
                     .filter(s -> s.type() == type)
                     .findAny().orElseThrow(() -> new IllegalStateException("bug in test code?"));
                 spots.remove(spot);
-                vehicle.state().fire(vehicle.state().new ParkedEvent(spot));
+                vehicle.state().new ParkedEvent(spot).fire();
                 assertSame(Vehicle.State.Parking, vehicle.state().state());
             }
             if (cycle || state.ordinal() > Vehicle.State.Parking.ordinal()) {
-                vehicle.state().fire(vehicle.state().new LeftSpotEvent());
+                vehicle.state().new LeftSpotEvent().fire();
                 assertSame(Vehicle.State.Leaving, vehicle.state().state());
             }
             if (cycle) {
-                vehicle.state().fire(vehicle.state().new LeftEvent());
+                vehicle.state().new LeftEvent().fire();
                 assertSame(Vehicle.State.Away, vehicle.state().state());
             }
         }

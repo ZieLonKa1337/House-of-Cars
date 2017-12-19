@@ -2,48 +2,60 @@ package de.codazz.houseofcars.statemachine;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.Objects;
 
-/** @param <E> event
- * @param <R> remote
- * @author rstumm2s */
-public class StateMachine<S extends State<E, R>, E, R> {
-    private R remote;
-    private S state;
+/** @author rstumm2s */
+public class StateMachine<State extends de.codazz.houseofcars.statemachine.State<Data, Event>, Data, Event> {
+    private Transition<Event, State, Data> transition;
 
-    public StateMachine(final S state, final R remote) {
-        this.state = Objects.requireNonNull(state);
-        this.remote = remote;
+    public StateMachine(final State state, final Data data) {
+        state.onEnter(data);
+        transition = transition(state, data);
     }
 
-    public void fire(final E event) throws NoSuchMethodException, InvocationTargetException {
-        final S next = state.onEvent(event);
-        state.onExit();
-        state = next;
-        state.onEnter(remote);
+    public StateMachine(final Transition<Event, State, Data> init) {
+        init.state().onEnter(init.data());
+        transition = init;
     }
 
-    public S state() {
-        return state;
+    public void fire(final Event event) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        final State state = state(), next = state.onEvent(event); // inner transition
+        if (next != null) { // outer transition
+            final Data data = state.onExit();
+            next.onEnter(data);
+            transition = transition(next, data);
+        }
     }
 
-    public R remote() {
-        return remote;
+    protected Transition<Event, State, Data> transition(final State state, final Data data) {
+        return new Transition<Event, State, Data>() {
+            @Override
+            public State state() {
+                return state;
+            }
+            @Override
+            public Data data() {
+                return data;
+            }
+        };
+    }
+
+    public State state() {
+        return transition.state();
     }
 
     public class CheckedEvent {
-        protected CheckedEvent(final S state) {
+        protected CheckedEvent(final State state) {
             if (!state.equals(state())) throw new IllegalStateException(state().toString());
         }
 
         @SafeVarargs
-        protected CheckedEvent(final S... states) {
+        protected CheckedEvent(final State... states) {
             this(Arrays.asList(states));
         }
 
-        protected CheckedEvent(final Iterable<S> states) {
+        protected CheckedEvent(final Iterable<State> states) {
             boolean allowed = false;
-            for (final S state : states) {
+            for (final State state : states) {
                 if (state.equals(state())) {
                     allowed = true;
                     break;
