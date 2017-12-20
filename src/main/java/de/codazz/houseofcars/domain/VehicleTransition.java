@@ -8,13 +8,17 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Transient;
 import javax.persistence.TypedQuery;
 import java.time.ZonedDateTime;
-import java.util.Collection;
+import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
 @NamedQuery(name = "VehicleTransition.since", query =
     "SELECT t FROM VehicleTransition t " +
     "WHERE t.time >= :time")
+@NamedQuery(name = "VehicleTransition.previous", query =
+    "SELECT t FROM VehicleTransition t " +
+    "WHERE t.time < :time" +
+    " AND t.vehicle = :vehicle")
 public class VehicleTransition extends Transition<Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
     public static TypedQuery<VehicleTransition> since(final ZonedDateTime time) {
         return Garage.instance().persistence.execute(em -> em)
@@ -52,5 +56,16 @@ public class VehicleTransition extends Transition<Vehicle.Event, Vehicle.State, 
             stateInstance = Vehicle.State.valueOf(state);
         }
         return stateInstance;
+    }
+
+    /** @return the associated vehicle's
+     * previous transition, if any */
+    public Optional<VehicleTransition> previous() {
+        return Garage.instance().persistence.execute(em -> em)
+            .createNamedQuery("VehicleTransition.previous", VehicleTransition.class)
+            .setMaxResults(1)
+            .setParameter("time", time())
+            .setParameter("vehicle", vehicle)
+            .getResultStream().findFirst();
     }
 }

@@ -77,10 +77,21 @@ public class History extends Broadcast {
                     final Vehicle.State state = transition.state();
                     final ZonedDateTime time = transition.time();
 
-                    return new GraphUpdate(state.name(), new Datapoint(
+                    final GraphUpdate update = new GraphUpdate(state.name(), new Datapoint(
                         time, Vehicle.count(state, time)
                     ));
+
+                    final VehicleTransition previous = transition.previous().orElse(null);
+                    if (previous != null)
+                        return new GraphUpdate[] {
+                            new GraphUpdate(previous.state().name(), new Datapoint(
+                               previous.time(), Vehicle.count(previous.state(), time)
+                            )),
+                            update
+                        };
+                    else return new GraphUpdate[] {update};
                 })
+                .flatMap(Arrays::stream)
                 .collect(Collectors.toList());
         }
 
