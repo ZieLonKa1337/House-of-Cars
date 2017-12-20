@@ -6,12 +6,15 @@
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
     <title>House of Cars Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.0/dist/patternomaly.min.js"></script>
 </head>
 <body>
 <h1>Dashboard</h1>
 
 <canvas id="graph"></canvas>
 <script>
+'use strict';
+
 let __dashboard = (function () {
     Chart.controllers.lineWithCurrent = Chart.controllers.line.extend({
         initialize: function () {
@@ -24,18 +27,36 @@ let __dashboard = (function () {
             let last = dataset.data[dataset.data.length - 1];
             if (!last) return;
 
+            let ctx = this.chart.chart.canvas.getContext('2d');
+            this.chart.chart.canvas.ctx = ctx;
+            ctx.lineWidth = 8;
+
             let metaData = this.getMeta().data[this.getMeta().data.length - 1];
             let x = metaData._model.x;
             let y = this.calculatePointY(last.y * ease);
 
-            this.chart.chart.canvas.ctx = this.chart.chart.canvas.getContext('2d');
-            this.chart.chart.canvas.ctx.beginPath();
-            this.chart.chart.canvas.ctx.moveTo(x, y);
-            this.chart.chart.canvas.ctx.strokeStyle = metaData._view.borderColor;
-            this.chart.chart.canvas.ctx.lineTo(this.chart.chart.width, y);
-            this.chart.chart.canvas.ctx.stroke();
+            let offsetY = y + ctx.lineWidth / 2;
+            ctx.strokeStyle = metaData._view.backgroundColor;
+            ctx.beginPath();
+            ctx.moveTo(x, offsetY);
+            ctx.lineTo(this.chart.chart.width, offsetY);
+            ctx.stroke();
+
+            ctx.strokeStyle = metaData._view.borderColor;
+            ctx.lineWidth = metaData._view.borderWidth;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(this.chart.chart.width, y);
+            ctx.stroke();
         }
     });
+
+    // workaround for https://github.com/chartjs/Chart.js/issues/4279#issuecomment-322286138
+    function getPattern(color, shape = null) {
+      let rgb = Chart.helpers.color(color);
+      let bgPattern = shape == null ? pattern.generate([color])[0] : pattern.draw(shape, color);
+      return Chart.helpers.extend(bgPattern, {r: rgb.red(), g: rgb.green(), b: rgb.blue(), alpha: rgb.alpha()});
+    }
 
     let chart = new Chart(document.getElementById('graph'), {
         type: 'lineWithCurrent',
@@ -46,11 +67,7 @@ let __dashboard = (function () {
                 text: 'State of Known Vehicles'
             },
             hover: {
-                mode: 'index',
-                intersect: false
-            },
-            tooltip: {
-                intersect: false
+                mode: 'index'
             },
             scales: {
                 xAxes: [{
@@ -74,6 +91,11 @@ let __dashboard = (function () {
             switch (data.type) {
                 case 'graph':
                     chart.data.datasets = data.datasets;
+                    chart.data.datasets.forEach(function (it) {
+                        it.backgroundColor = getPattern('hsla(' + Math.floor(360 * Math.random()) + ', 100%, 50%, 0.75)');
+                        it.borderColor = 'black';
+                        it.borderWidth = 1;
+                    });
                     chart.update();
                     break;
                 case 'graph-update':
