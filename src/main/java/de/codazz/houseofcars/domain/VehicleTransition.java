@@ -21,9 +21,9 @@ import java.util.Optional;
     " AND t.vehicle = :vehicle")
 public class VehicleTransition extends Transition<Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
     public static TypedQuery<VehicleTransition> since(final ZonedDateTime time) {
-        return Garage.instance().persistence.execute(em -> em)
+        return Garage.instance().persistence.execute(em -> em
             .createNamedQuery("VehicleTransition.since", VehicleTransition.class)
-            .setParameter("time", time);
+            .setParameter("time", time));
     }
 
     @ManyToOne(optional = false)
@@ -61,11 +61,11 @@ public class VehicleTransition extends Transition<Vehicle.Event, Vehicle.State, 
     /** @return the associated vehicle's
      * previous transition, if any */
     public Optional<VehicleTransition> previous() {
-        return Garage.instance().persistence.execute(em -> em)
+        return Garage.instance().persistence.execute(em -> em
             .createNamedQuery("VehicleTransition.previous", VehicleTransition.class)
             .setMaxResults(1)
             .setParameter("time", time())
             .setParameter("vehicle", vehicle)
-            .getResultStream().findFirst();
+            .getResultStream().findFirst());
     }
 }

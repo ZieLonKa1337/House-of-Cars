@@ -37,8 +37,7 @@ public class VGate extends Gate {
                     public void run() {
                         timer.cancel();
 
-                        final Vehicle vehicle = Garage.instance().persistence.execute(em -> em)
-                            .find(Vehicle.class, license);
+                        final Vehicle vehicle = Garage.instance().persistence.execute(em -> em.find(Vehicle.class, license));
 
                         try {
                             vehicle.state().new ParkedEvent(

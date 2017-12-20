@@ -97,11 +97,11 @@ public class Vehicle extends Entity {
     /** @param time when the state was entered
      * @return the number of vehicles in the given state at the given time */
     public static int count(final Vehicle.State state, final ZonedDateTime time) {
-        return Garage.instance().persistence.execute(em -> em)
+        return Garage.instance().persistence.execute(em -> em
             .createNamedQuery("Vehicle.countStateAt", BigInteger.class)
             .setParameter("state", state.name())
             .setParameter("time", time)
-            .getSingleResult().intValueExact();
+            .getSingleResult().intValueExact());
     }
 
     @Id
