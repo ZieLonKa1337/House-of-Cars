@@ -4,7 +4,7 @@ import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.domain.VehicleTransition;
 import de.codazz.houseofcars.websocket.Broadcast;
-import de.codazz.houseofcars.websocket.Message;
+import de.codazz.houseofcars.websocket.TypedMessage;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.slf4j.Logger;
@@ -48,7 +48,7 @@ public class History extends Broadcast {
     @Override
     public void connected(final Session session) {
         try {
-            session.getRemote().sendString(graph.toJson());
+            send(graph, session);
             super.connected(session);
         } catch (final IOException ignore) {}
     }
@@ -67,12 +67,12 @@ public class History extends Broadcast {
 
             updated.ifPresent(__ -> jpql.append("WHERE t.time > :time\n"));
 
-            final TypedQuery<VehicleTransition> updatesQuery = Garage.instance().persistence.execute(em -> em)
+            final TypedQuery<VehicleTransition> query = Garage.instance().persistence.execute(em -> em)
                 .createQuery(jpql.append("ORDER BY t.time").toString(), VehicleTransition.class);
 
-            updated.ifPresent(time -> updatesQuery.setParameter("time", time));
+            updated.ifPresent(time -> query.setParameter("time", time));
 
-            updates = Garage.instance().persistence.execute(__ -> updatesQuery.getResultList()).stream()
+            updates = Garage.instance().persistence.execute(__ -> query.getResultList()).stream()
                 .map(transition -> {
                     final Vehicle.State state = transition.state();
                     final ZonedDateTime time = transition.time();
@@ -102,7 +102,7 @@ public class History extends Broadcast {
         instance.broadcast(updates);
     }
 
-    private static class GraphUpdate extends Message {
+    private static class GraphUpdate extends TypedMessage {
         final String dataset;
         final Datapoint datapoint;
 
@@ -113,7 +113,7 @@ public class History extends Broadcast {
         }
     }
 
-    private static class Graph extends Message {
+    private static class Graph extends TypedMessage {
         public Graph(final Dataset... datasets) {
             super("graph");
             this.datasets = datasets;

@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 
+/** @author rstumm2s */
 @MappedSuperclass
 public abstract class Transition<Event, State extends de.codazz.houseofcars.statemachine.State<Data, Event>, Data> extends Entity implements de.codazz.houseofcars.statemachine.Transition<Event, State, Data> {
     /** only for testing */
@@ -24,7 +25,7 @@ public abstract class Transition<Event, State extends de.codazz.houseofcars.stat
     private ZonedDateTime time = ZonedDateTime.now(clock);
 
     @Embedded
-    private Data data;
+    protected Data data;
 
     /** @deprecated only for JPA */
     @Deprecated

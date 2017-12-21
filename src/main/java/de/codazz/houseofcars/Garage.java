@@ -1,8 +1,10 @@
 package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Spot;
+import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.History;
+import de.codazz.houseofcars.websocket.subprotocol.Monitor;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
 import de.codazz.houseofcars.websocket.subprotocol.VGate;
 import spark.ModelAndView;
@@ -68,12 +70,15 @@ public class Garage implements Runnable, Closeable {
 
         webSocket("/ws/status", Status.class);
         webSocket("/ws/status/history", History.class);
+        webSocket("/ws/status/monitor", Monitor.class);
         webSocket("/ws/gate", Gate.class);
         webSocket("/ws/vgate", VGate.class);
 
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
         get("/dashboard", new TemplateViewRoute() {
-            final Map<String, Object> templateValues = new HashMap<>();
+            final Map<String, Object> templateValues = new HashMap<>(); {
+                templateValues.put("vehicleStates", Arrays.stream(Vehicle.State.values()).map(Enum::name).toArray(String[]::new));
+            }
             final ModelAndView modelAndView = modelAndView(templateValues, "dashboard.html.mustache");
 
             @Override
@@ -83,7 +88,7 @@ public class Garage implements Runnable, Closeable {
         }, templateEngine);
         get("/vgate", new TemplateViewRoute() {
             final Map<String, Object> templateValues = new HashMap<>(); {
-                templateValues.put("spotTypes", Arrays.stream(Spot.Type.values()).map(Spot.Type::name).toArray(String[]::new));
+                templateValues.put("spotTypes", Arrays.stream(Spot.Type.values()).map(Enum::name).toArray(String[]::new));
             }
             final ModelAndView modelAndView = modelAndView(templateValues, "vgate.html.mustache");
 
@@ -102,6 +107,7 @@ public class Garage implements Runnable, Closeable {
 
             Status.close();
             History.close();
+            Monitor.close();
         }
         persistence.close();
 

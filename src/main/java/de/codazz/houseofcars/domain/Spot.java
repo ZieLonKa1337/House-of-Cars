@@ -157,15 +157,3 @@ public class Spot extends Entity {
         HANDICAP
     }
 }
-
-/** native view
- * @author rstumm2s */
-@javax.persistence.Entity
-final class parking {
-    @Id
-    private int spot_id;
-    private String vehicle_license;
-    private ZonedDateTime since;
-
-    protected parking() {}
-}

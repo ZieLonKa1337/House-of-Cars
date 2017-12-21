@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -77,10 +78,10 @@ public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
     public List<String> getManagedClassNames() {
         final List<String> classes = new ArrayList<>();
         classes.add("de.codazz.houseofcars.domain.Spot");
-        classes.add("de.codazz.houseofcars.domain.parking");
         classes.add("de.codazz.houseofcars.domain.Vehicle");
-        classes.add("de.codazz.houseofcars.domain.vehicle_state");
         classes.add("de.codazz.houseofcars.domain.VehicleTransition");
+        classes.add("de.codazz.houseofcars.domain.view.SpotStatus");
+        classes.add("de.codazz.houseofcars.domain.view.VehicleStatus");
         return Collections.unmodifiableList(classes);
     }
 

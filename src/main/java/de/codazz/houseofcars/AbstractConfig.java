@@ -7,8 +7,10 @@ abstract class AbstractConfig implements Config {
     private int port;
     private String jdbcUrl, jdbcUser, jdbcPassword;
 
-    AbstractConfig(final int port,
-            final String jdbcUrl, final String jdbcUser, final String jdbcPassword) {
+    AbstractConfig(
+        final int port,
+        final String jdbcUrl, final String jdbcUser, final String jdbcPassword
+    ) {
         this.port = port;
         this.jdbcUrl = jdbcUrl;
         this.jdbcUser = jdbcUser;
@@ -41,8 +43,8 @@ abstract class AbstractConfig implements Config {
         if (!(o instanceof AbstractConfig)) return false;
         final AbstractConfig that = (AbstractConfig) o;
         return port() == that.port() &&
-                Objects.equals(jdbcUrl(), that.jdbcUrl()) &&
-                Objects.equals(jdbcUser(), that.jdbcUser()) &&
-                Objects.equals(jdbcPassword(), that.jdbcPassword());
+            Objects.equals(jdbcUrl(), that.jdbcUrl()) &&
+            Objects.equals(jdbcUser(), that.jdbcUser()) &&
+            Objects.equals(jdbcPassword(), that.jdbcPassword());
     }
 }

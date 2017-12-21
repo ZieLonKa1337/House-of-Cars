@@ -1,0 +1,60 @@
+<!-- rstumm2s -->
+<article>
+    <style>
+    table.monitor {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+
+    table.monitor td {
+        vertical-align: text-top;
+    }
+    </style>
+
+    <table class="monitor" border="1">
+        <tr>
+            {{#vehicleStates}}
+                <th>{{.}}</th>
+            {{/vehicleStates}}
+        </tr>
+        <tr>
+            {{#vehicleStates}}
+                <td data-state="{{.}}"></td>
+            {{/vehicleStates}}
+        </tr>
+    </table>
+    <script>
+    'use strict';
+    (function () {
+        let target = document.currentScript.previousElementSibling;
+
+        let socket;
+        (function connect() {
+            socket = new WebSocket('ws://' + window.location.host + '/ws/status/monitor');
+            socket.onclose = connect;
+            socket.onmessage = function (msg) {
+                let data = JSON.parse(msg.data);
+
+                let tds = target.getElementsByTagName('td');
+                for (let i = 0; i < tds.length; i++) {
+                    let td = tds[i];
+                    td.innerHTML = null;
+
+                    let listHTML = '<ul>';
+                    data
+                        .filter(function (it) {
+                            return it.state == td.dataset.state;
+                        })
+                        .forEach(function (it) {
+                            listHTML += '<li>' + it.vehicle_license + '</li>';
+                        });
+                    listHTML += '</ul>';
+
+                    td.insertAdjacentHTML('beforeend', listHTML);
+                }
+            };
+        })();
+    })();
+    </script>
+</article>

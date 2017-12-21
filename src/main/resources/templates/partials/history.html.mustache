@@ -1,0 +1,113 @@
+<!-- rstumm2s -->
+<article class="chart-container">
+    <style>
+    .chart-container {
+        position: relative;
+        height: 50vh;
+    }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/patternomaly@1.3.0/dist/patternomaly.min.js"></script>
+    <canvas></canvas>
+    <script>
+    'use strict';
+    (function () {
+        Chart.controllers.lineWithCurrent = Chart.controllers.line.extend({
+            initialize: function () {
+                Chart.controllers.line.prototype.initialize.apply(this, arguments);
+            },
+            draw: function (ease) {
+                Chart.controllers.line.prototype.draw.apply(this, arguments);
+
+                let dataset = this.getDataset();
+                let last = dataset.data[dataset.data.length - 1];
+                if (!last) return;
+
+                let ctx = this.chart.chart.canvas.getContext('2d');
+                this.chart.chart.canvas.ctx = ctx;
+                ctx.lineWidth = 8;
+
+                let metaData = this.getMeta().data[this.getMeta().data.length - 1];
+                let x = metaData._model.x;
+                let y = this.calculatePointY(last.y * ease);
+
+                let offsetY = y + ctx.lineWidth / 2;
+                ctx.strokeStyle = metaData._view.backgroundColor;
+                ctx.beginPath();
+                ctx.moveTo(x, offsetY);
+                ctx.lineTo(this.chart.chart.width, offsetY);
+                ctx.stroke();
+
+                ctx.strokeStyle = metaData._view.borderColor;
+                ctx.lineWidth = metaData._view.borderWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(this.chart.chart.width, y);
+                ctx.stroke();
+            }
+        });
+
+        // workaround for https://github.com/chartjs/Chart.js/issues/4279#issuecomment-322286138
+        function getPattern(color, shape = null) {
+          let rgb = Chart.helpers.color(color);
+          let bgPattern = shape == null ? pattern.generate([color])[0] : pattern.draw(shape, color);
+          return Chart.helpers.extend(bgPattern, {r: rgb.red(), g: rgb.green(), b: rgb.blue(), alpha: rgb.alpha()});
+        }
+
+        let chart = new Chart(document.currentScript.previousElementSibling, {
+            type: 'lineWithCurrent',
+            data: {},
+            options: {
+                maintainAspectRatio: false,
+                hover: {
+                    mode: 'index'
+                },
+                elements: {
+                    line: {
+                        stepped: true
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        type: 'time'
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+
+        let socket;
+        (function connect() {
+            socket = new WebSocket('ws://' + window.location.host + '/ws/status/history');
+            socket.onclose = connect;
+            socket.onmessage = function (msg) {
+                let data = JSON.parse(msg.data);
+                switch (data.type) {
+                    case 'graph':
+                        chart.data.datasets = data.datasets;
+                        chart.data.datasets.forEach(function (it) {
+                            it.backgroundColor = getPattern('hsla(' + Math.floor(360 * Math.random()) + ', 100%, 50%, 0.75)');
+                            it.borderColor = 'black';
+                            it.borderWidth = 1;
+                        });
+                        chart.update();
+                        break;
+                    case 'graph-update':
+                        chart.data.datasets.forEach(function (it) {
+                            if (it.label == data.dataset) {
+                                it.data.push(data.datapoint);
+                            }
+                        });
+                        chart.update();
+                        break;
+                }
+            };
+        })();
+    })();
+    </script>
+</article>

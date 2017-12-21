@@ -32,7 +32,7 @@ public abstract class Broadcast {
         }
     }
 
-    public void broadcast(final Collection<? extends Message> messages) {
+    public void broadcast(final Collection<?> messages) {
         synchronized (sessions) {
             log.trace("{} broadcasting {} messages to {} sessions", getClass().getSimpleName(), messages.size(), sessions.size());
             if (sessions.isEmpty()) return;
@@ -40,7 +40,7 @@ public abstract class Broadcast {
         }
     }
 
-    public void broadcast(final Message message) {
+    public void broadcast(final Object message) {
         synchronized (sessions) {
             log.trace("{} broadcasting to {} sessions: {}", getClass().getSimpleName(), sessions.size(), message);
             sessions.forEach(session -> {
@@ -54,7 +54,7 @@ public abstract class Broadcast {
         }
     }
 
-    public void send(final Message message, final Session session) throws IOException {
-        session.getRemote().sendString(message.toJson());
+    public static void send(final Object message, final Session session) throws IOException {
+        session.getRemote().sendString(message.toString());
     }
 }

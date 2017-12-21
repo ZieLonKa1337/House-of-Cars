@@ -1,12 +1,10 @@
 package de.codazz.houseofcars;
 
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.dialect.PostgreSQL95Dialect;
-import org.hibernate.dialect.PostgreSQLDialect;
-import org.hibernate.dialect.function.StandardSQLFunction;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import java.io.Closeable;
 import java.util.HashMap;
@@ -27,7 +25,7 @@ import java.util.function.Function;
 public class Persistence implements Closeable {
     ExecutorService executor = Executors.newSingleThreadExecutor(); // package scope and non-final for tests
 
-    private final EntityManager entityManager;
+    private volatile EntityManager entityManager;
 
     public Persistence(final String jdbcUrl, final String jdbcUser, final String jdbcPassword) {
         final Map<String, Object> factoryProps = new HashMap<>();
@@ -40,6 +38,20 @@ public class Persistence implements Closeable {
                 new PerstistenceUnitInfoImpl(HibernatePersistenceProvider.class.getName()),
                 factoryProps)
             .createEntityManager();
+    }
+
+    public void refresh() {
+        try {
+            final EntityManagerFactory factory = entityManager.getEntityManagerFactory();
+            executor.submit(() -> {
+                if (entityManager != null) {
+                    entityManager.close();
+                }
+                entityManager = factory.createEntityManager();
+            }).get();
+        } catch (final InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** run async */

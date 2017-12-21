@@ -3,6 +3,7 @@ package de.codazz.houseofcars.websocket.subprotocol;
 import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.jsonbeans.JsonValue;
 import de.codazz.houseofcars.websocket.Message;
+import de.codazz.houseofcars.websocket.TypedMessage;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
@@ -62,7 +63,7 @@ public class Gate {
         }
     }
 
-    private class OpenResponse extends Message {
+    private class OpenResponse extends TypedMessage {
         final boolean permission;
 
         public OpenResponse(final boolean permission) {

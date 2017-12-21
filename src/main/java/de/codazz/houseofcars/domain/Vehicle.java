@@ -6,17 +6,21 @@ import de.codazz.houseofcars.websocket.subprotocol.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.Column;
 import javax.persistence.ColumnResult;
 import javax.persistence.Embeddable;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQuery;
+import javax.persistence.PostLoad;
 import javax.persistence.SqlResultSetMapping;
 import javax.persistence.Transient;
+import javax.persistence.TypedQuery;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
@@ -243,7 +247,7 @@ public class Vehicle extends Entity {
             }
         };
 
-        protected Data data;
+        protected volatile Data data;
 
         @Override
         public void onEnter(final Data data) {
@@ -268,16 +272,4 @@ public class Vehicle extends Entity {
             // TODO tarif / payment rate?
         }
     }
-}
-
-/** native view
- * @author rstumm2s */
-@javax.persistence.Entity
-final class vehicle_state {
-    @Id
-    private String vehicle_license;
-    private String state;
-    private ZonedDateTime since;
-
-    protected vehicle_state() {}
 }

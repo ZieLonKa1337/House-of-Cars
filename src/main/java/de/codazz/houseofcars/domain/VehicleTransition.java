@@ -5,13 +5,14 @@ import de.codazz.houseofcars.Garage;
 import javax.persistence.Column;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
+import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import javax.persistence.TypedQuery;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
 /** @author rstumm2s */
-@javax.persistence.Entity
+@javax.persistence.Entity(name = "VehicleTransition")
 @NamedQuery(name = "VehicleTransition.since", query =
     "SELECT t FROM VehicleTransition t " +
     "WHERE t.time >= :time")
@@ -19,10 +20,10 @@ import java.util.Optional;
     "SELECT t FROM VehicleTransition t " +
     "WHERE t.time < :time" +
     " AND t.vehicle = :vehicle")
-public class VehicleTransition extends Transition<Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
-    public static TypedQuery<VehicleTransition> since(final ZonedDateTime time) {
+public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
+    public static TypedQuery<Transition> since(final ZonedDateTime time) {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("VehicleTransition.since", VehicleTransition.class)
+            .createNamedQuery("VehicleTransition.since", Transition.class)
             .setParameter("time", time));
     }
 
@@ -44,6 +45,13 @@ public class VehicleTransition extends Transition<Vehicle.Event, Vehicle.State, 
         this.vehicle = vehicle;
         this.state = state.name();
         stateInstance = state;
+    }
+
+    @PostLoad
+    private void init() {
+        if (data == null) {
+            data = new Vehicle.State.Data();
+        }
     }
 
     public Vehicle vehicle() {
