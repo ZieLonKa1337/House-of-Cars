@@ -30,16 +30,6 @@ alter table VehicleTransition
 
 --
 
-CREATE VIEW parking AS
- SELECT
-  id AS spot_id,
-  vehicle_license,
-  time AS since
- FROM Spot, VehicleTransition
- WHERE id = spot_id
-  AND state = 'Parking'
- ORDER BY time DESC;
-
 CREATE TYPE vehicle_state_t AS (
  vehicle_license varchar(255),
  state           varchar(255),
@@ -62,3 +52,14 @@ IMMUTABLE;
 
 CREATE VIEW vehicle_state AS
  SELECT * FROM vehicle_state_at(CURRENT_TIMESTAMP);
+
+CREATE VIEW parking AS
+ SELECT
+  VehicleTransition.spot_id,
+  vehicle_state.vehicle_license,
+  since
+ FROM vehicle_state, VehicleTransition
+ WHERE vehicle_state.since = VehicleTransition.time
+  AND vehicle_state.state = 'Parking'
+  AND vehicle_state.state = VehicleTransition.state
+ ORDER BY since DESC;

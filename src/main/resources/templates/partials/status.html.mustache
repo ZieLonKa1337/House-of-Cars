@@ -14,8 +14,10 @@
     <div>Waiting for update...</div>
     <script>
     'use strict';
-
-    let _status = (function () {
+    if (window.__hoc === undefined) {
+        window.__hoc = {};
+    }
+    window.__hoc.status = (function () {
         let target = document.currentScript.previousElementSibling;
 
         let socket;

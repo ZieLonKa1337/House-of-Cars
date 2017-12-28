@@ -22,6 +22,7 @@ import java.util.function.Function;
  * probably nesting calls, causing a deadlock.
  * </strong></p>
  * @author rstumm2s */
+// TODO consumer alternatives
 public class Persistence implements Closeable {
     ExecutorService executor = Executors.newSingleThreadExecutor(); // package scope and non-final for tests
 
@@ -54,9 +55,19 @@ public class Persistence implements Closeable {
         }
     }
 
+    private volatile Thread thread;
+
     /** run async */
     public <T> Future<T> submit(final Function<EntityManager, T> function) {
-        return executor.submit(() -> function.apply(entityManager));
+        if (Thread.currentThread() == thread) throw new IllegalStateException("dead-lock! nested call to single thread executor");
+        return executor.submit(() -> {
+            thread = Thread.currentThread();
+            try {
+                return function.apply(entityManager);
+            } finally {
+                thread = null;
+            }
+        });
     }
 
     /** wait for the function to return */

@@ -2,17 +2,10 @@ package de.codazz.houseofcars.domain;
 
 import de.codazz.houseofcars.Garage;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
-import javax.persistence.PostLoad;
-import javax.persistence.Table;
-import java.time.ZonedDateTime;
-import java.util.Collection;
 import java.util.Optional;
 
 /** @author rstumm2s */
@@ -100,8 +93,7 @@ public class Spot extends Entity {
             .getSingleResult());
     }
 
-    /** has no use except for testing */
-    static Optional<Spot> anyFree() {
+    public static Optional<Spot> anyFree() {
         for (Type type : Type.values()) {
             final Optional<Spot> spot = anyFree(type);
             if (spot.isPresent()) return spot;

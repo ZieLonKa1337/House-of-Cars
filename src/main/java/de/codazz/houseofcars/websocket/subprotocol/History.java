@@ -64,15 +64,14 @@ public class History extends Broadcast {
 
         final List<GraphUpdate> updates; {
             final StringBuilder jpql = new StringBuilder("SELECT t FROM VehicleTransition t\n"); // XXX gc
-
             updated.ifPresent(__ -> jpql.append("WHERE t.time > :time\n"));
 
-            final TypedQuery<VehicleTransition> query = Garage.instance().persistence.execute(em -> em)
-                .createQuery(jpql.append("ORDER BY t.time").toString(), VehicleTransition.class);
-
-            updated.ifPresent(time -> query.setParameter("time", time));
-
-            updates = Garage.instance().persistence.execute(__ -> query.getResultList()).stream()
+            Garage.instance().persistence.refresh();
+            updates = Garage.instance().persistence.execute(em -> {
+                final TypedQuery<VehicleTransition> query = em.createQuery(jpql.append("ORDER BY t.time").toString(), VehicleTransition.class);
+                updated.ifPresent(time -> query.setParameter("time", time));
+                return query.getResultList();
+            }).stream()
                 .map(transition -> {
                     final Vehicle.State state = transition.state();
                     final ZonedDateTime time = transition.time();

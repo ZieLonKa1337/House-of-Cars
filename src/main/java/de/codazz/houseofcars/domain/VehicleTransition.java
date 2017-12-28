@@ -19,7 +19,8 @@ import java.util.Optional;
 @NamedQuery(name = "VehicleTransition.previous", query =
     "SELECT t FROM VehicleTransition t " +
     "WHERE t.time < :time" +
-    " AND t.vehicle = :vehicle")
+    " AND t.vehicle = :vehicle " +
+    "ORDER BY t.time DESC")
 public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
     public static TypedQuery<Transition> since(final ZonedDateTime time) {
         return Garage.instance().persistence.execute(em -> em

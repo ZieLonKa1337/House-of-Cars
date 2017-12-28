@@ -6,21 +6,17 @@ import de.codazz.houseofcars.websocket.subprotocol.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.Column;
 import javax.persistence.ColumnResult;
 import javax.persistence.Embeddable;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQuery;
-import javax.persistence.PostLoad;
 import javax.persistence.SqlResultSetMapping;
 import javax.persistence.Transient;
-import javax.persistence.TypedQuery;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
-import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
@@ -224,15 +220,23 @@ public class Vehicle extends Entity {
         /** the vehicle is inside the garage, looking for a spot */
         LookingForSpot {
             State on(final Lifecycle.ParkedEvent event) {
-                data.spot = event.spot;
+                data.parked = event;
                 return Parking;
             }
         },
         /** the vehicle is parking on a spot, this is what we price */
         Parking {
             @Override
+            public void onEnter(final Data data) {
+                super.onEnter(data);
+                if (data.spot == null) { // could be restored
+                    data.spot = data.parked.spot;
+                }
+            }
+
+            @Override
             public Data onExit() {
-                data.spot = null;
+                data.parked = null; // gc
                 return super.onExit();
             }
 
@@ -242,6 +246,12 @@ public class Vehicle extends Entity {
         },
         /** the vehicle is driving around the garage to leave */
         Leaving {
+            @Override
+            public void onEnter(final Data data) {
+                super.onEnter(data);
+                data.spot = null;
+            }
+
             State on(final Lifecycle.LeftEvent __) {
                 return Away;
             }
@@ -257,7 +267,9 @@ public class Vehicle extends Entity {
         @Override
         public Data onExit() {
             try {
-                return data;
+                /* do not propagate the same data instance between states!
+                 * it's embedded so you will modify past transitions */
+                return data.clone();
             } finally {
                 data = null;
             }
@@ -265,11 +277,24 @@ public class Vehicle extends Entity {
 
         /** @author rstumm2s */
         @Embeddable
-        static class Data {
+        static class Data implements Cloneable {
+            @Transient
+            transient Lifecycle.ParkedEvent parked;
+
             @ManyToOne
             Spot spot;
 
             // TODO tarif / payment rate?
+
+            @Override
+            public Data clone() {
+                try {
+                    return (Data) super.clone();
+                } catch (final CloneNotSupportedException e) {
+                    // never happens
+                    throw new AssertionError(e);
+                }
+            }
         }
     }
 }

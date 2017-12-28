@@ -20,13 +20,19 @@
         </tr>
         <tr>
             {{#vehicleStates}}
-                <td data-state="{{.}}"></td>
+                <td data-state="{{.}}"
+                    ondragover="__hoc.monitor.dnd.dragover(event);"
+                    ondrop="__hoc.monitor.dnd.drop(event);">
+                </td>
             {{/vehicleStates}}
         </tr>
     </table>
     <script>
     'use strict';
-    (function () {
+    if (window.__hoc === undefined) {
+        window.__hoc = {};
+    }
+    window.__hoc.monitor = (function () {
         let target = document.currentScript.previousElementSibling;
 
         let socket;
@@ -42,12 +48,19 @@
                     td.innerHTML = null;
 
                     let listHTML = '<ul>';
-                    data
+                    data // XXX move grouping to server / db query
                         .filter(function (it) {
                             return it.state == td.dataset.state;
                         })
                         .forEach(function (it) {
-                            listHTML += '<li>' + it.vehicle_license + '</li>';
+                            listHTML += '<li draggable="true" ondragstart="__hoc.monitor.dnd.dragstart(event);" ';
+                            listHTML += 'data-vehicle="';
+                            listHTML += it.vehicle_license;
+                            listHTML += '" data-state="';
+                            listHTML += it.state
+                            listHTML += '">';
+                            listHTML += it.vehicle_license;
+                            listHTML += '</li>';
                         });
                     listHTML += '</ul>';
 
@@ -55,6 +68,30 @@
                 }
             };
         })();
+
+        return {
+            dnd: {
+                dragstart: function (event) {
+                    event.dataTransfer.setData('text/plain', JSON.stringify({
+                        vehicle: event.target.dataset.vehicle,
+                        state: event.target.dataset.state
+                    }));
+                },
+                dragover: function (event) {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                },
+                drop: function (event) {
+                    event.preventDefault();
+                    let payload = JSON.parse(event.dataTransfer.getData('text'));
+                    socket.send(JSON.stringify({
+                        type: 'set-state',
+                        vehicle: payload.vehicle,
+                        state: event.currentTarget.dataset.state
+                    }));
+                }
+            }
+        };
     })();
     </script>
 </article>
