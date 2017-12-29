@@ -73,22 +73,14 @@ public class History extends Broadcast {
                 return query.getResultList();
             }).stream()
                 .map(transition -> {
-                    final Vehicle.State state = transition.state();
-                    final ZonedDateTime time = transition.time();
-
-                    final GraphUpdate update = new GraphUpdate(state.name(), new Datapoint(
-                        time, Vehicle.count(state, time)
-                    ));
-
-                    final VehicleTransition previous = transition.previous().orElse(null);
-                    if (previous != null)
-                        return new GraphUpdate[] {
-                            new GraphUpdate(previous.state().name(), new Datapoint(
-                               previous.time(), Vehicle.count(previous.state(), time)
-                            )),
-                            update
-                        };
-                    else return new GraphUpdate[] {update};
+                    // update all states after every transition
+                    final GraphUpdate[] transitionUpdates = new GraphUpdate[Vehicle.State.values().length];
+                    for (final Vehicle.State state : Vehicle.State.values()) {
+                        transitionUpdates[state.ordinal()] = new GraphUpdate(state.name(), new Datapoint(
+                            transition.time(), Vehicle.count(state, transition.time())
+                        ));
+                    }
+                    return transitionUpdates;
                 })
                 .flatMap(Arrays::stream)
                 .collect(Collectors.toList());
@@ -126,6 +118,7 @@ public class History extends Broadcast {
                 .forEach(it -> it.update(update));
         }
 
+        /** @return the time of the last datapoint in this graph */
         public synchronized Optional<ZonedDateTime> updated() {
             return Arrays.stream(datasets)
                 .map(it -> it.data)
