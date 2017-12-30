@@ -32,12 +32,12 @@
     if (window.__hoc === undefined) {
         window.__hoc = {};
     }
-    window.__hoc.monitor = (function () {
+    __hoc.monitor = (function () {
         let target = document.currentScript.previousElementSibling;
 
         let socket;
         (function connect() {
-            socket = new WebSocket('ws://' + window.location.host + '/ws/status/monitor');
+            socket = new WebSocket('ws://' + location.host + '/ws/status/monitor');
             socket.onclose = connect;
             socket.onmessage = function (msg) {
                 let data = JSON.parse(msg.data);

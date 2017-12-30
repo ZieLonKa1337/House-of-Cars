@@ -1,6 +1,7 @@
 package de.codazz.houseofcars.business;
 
 import de.codazz.houseofcars.GarageMock;
+import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -46,7 +47,7 @@ public class GateTest {
         assertEquals(Gate.State.Open, machine.state());
         assertEquals(0, Vehicle.count(Vehicle.State.LookingForSpot));
 
-        machine.new EnteredEvent("US4").fire();
+        machine.new EnteredEvent("US4", Spot.anyFree().orElseThrow(() -> new IllegalStateException("bug in test code?")).id()).fire();
         assertEquals(Gate.State.Closed, machine.state());
         assertEquals(1, Vehicle.count(Vehicle.State.LookingForSpot));
     }

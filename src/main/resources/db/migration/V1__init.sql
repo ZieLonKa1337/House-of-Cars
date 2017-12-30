@@ -18,6 +18,7 @@ create table VehicleTransition (
 	OPTLOCK int8 not null,
 	state varchar(255) not null,
 	spot_id int4,
+	recommendedspot_id int4,
 	vehicle_license varchar(255) not null,
 	primary key (time)
 );

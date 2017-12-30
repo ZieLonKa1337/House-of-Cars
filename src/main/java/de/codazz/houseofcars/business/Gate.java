@@ -37,7 +37,9 @@ public class Gate extends EnumStateMachine<Gate.State, Void, Gate.Event> {
                 });
 
                 try {
-                    vehicle.state().new EnteredEvent().fire();
+                    vehicle.state().new EnteredEvent(
+                        Garage.instance().persistence.execute(em -> em.find(Spot.class, event.recommendedSpot))
+                    ).fire();
                 } catch (final InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
                     log.error("failed to mutate state of vehicle {}", event.license);
                 }
@@ -71,10 +73,12 @@ public class Gate extends EnumStateMachine<Gate.State, Void, Gate.Event> {
      * and the gate has closed again */
     public class EnteredEvent extends GateEvent {
         public final String license;
+        public final int recommendedSpot;
 
-        public EnteredEvent(final String license) {
+        public EnteredEvent(final String license, final int recommendedSpot) {
             super(State.Open);
             this.license = license;
+            this.recommendedSpot = recommendedSpot;
         }
     }
 

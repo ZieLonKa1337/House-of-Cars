@@ -2,6 +2,7 @@ package de.codazz.houseofcars.websocket.subprotocol;
 
 import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.jsonbeans.JsonValue;
+import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.websocket.Message;
 import de.codazz.houseofcars.websocket.TypedMessage;
 import org.eclipse.jetty.websocket.api.Session;
@@ -51,12 +52,12 @@ public class Gate {
     protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         switch (msg.getString("type")) {
             case "open-request":
-                return new OpenResponse(state.requestOpen(msg.getString("license")));
+                return new OpenResponse(state.requestOpen(msg.getString("license")), Spot.anyFree().map(Spot::id).orElse(-1));
             case "opened":
                 state.new OpenedEvent().fire();
                 return null;
             case "entered":
-                state.new EnteredEvent(msg.getString("license")).fire();
+                state.new EnteredEvent(msg.getString("license"), msg.getInt("recommendedSpot")).fire();
                 return null;
             default:
                 return null;
@@ -65,10 +66,12 @@ public class Gate {
 
     private class OpenResponse extends TypedMessage {
         final boolean permission;
+        final int recommendedSpot;
 
-        public OpenResponse(final boolean permission) {
+        public OpenResponse(final boolean permission, final int recommendedSpot) {
             super("open-response");
             this.permission = permission;
+            this.recommendedSpot = recommendedSpot;
         }
     }
 }

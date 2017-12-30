@@ -14,10 +14,15 @@ public abstract class Transition<Event, State extends de.codazz.houseofcars.stat
     /** only for testing */
     private static Clock clock = Clock.systemDefaultZone();
 
-    /** @deprecated only for testing */
+    /** @param duration {@code null} to reset
+     * @deprecated only for testing */
     @Deprecated
     static void tick(final Duration duration) {
-        clock = Clock.offset(clock, duration);
+        if (duration == null) {
+            clock = Clock.systemDefaultZone();
+        } else {
+            clock = Clock.offset(clock, duration);
+        }
     }
 
     @Id

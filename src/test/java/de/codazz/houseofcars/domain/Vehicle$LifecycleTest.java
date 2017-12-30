@@ -8,14 +8,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.beans.Transient;
 import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
-import java.time.Clock;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static de.codazz.houseofcars.domain.SpotTest.NUM_SPOTS;
 import static de.codazz.houseofcars.domain.SpotTest.NUM_TOTAL;
@@ -33,7 +29,7 @@ public class Vehicle$LifecycleTest {
 
     static GarageMock garage;
 
-    Vehicle vehicle;
+    Vehicle.Lifecycle lifecycle;
     Vehicle.State start;
 
     public Vehicle$LifecycleTest(final Vehicle.State state) {
@@ -43,6 +39,7 @@ public class Vehicle$LifecycleTest {
     @BeforeClass
     public static void setUpClass() throws FileNotFoundException {
         garage = new GarageMock();
+        Transition.tick(null);
     }
 
     @AfterClass
@@ -53,7 +50,9 @@ public class Vehicle$LifecycleTest {
     @Before
     public void setUp() {
         garage.reset(NUM_TOTAL, NUM_SPOTS);
-        vehicle = garage.persistence.transact((em, __) -> {
+
+        final Spot spot = Spot.anyFree().orElseThrow(AssertionError::new);
+        lifecycle = garage.persistence.transact((em, __) -> {
             final Vehicle v = new Vehicle("LifecycleTest");
             em.persist(v);
 
@@ -63,12 +62,13 @@ public class Vehicle$LifecycleTest {
             final Vehicle.State.Data data = new Vehicle.State.Data();
 
             if (start.ordinal() >= Vehicle.State.LookingForSpot.ordinal()) {
-                em.persist(new VehicleTransition(v, Vehicle.State.LookingForSpot, new Vehicle.State.Data()));
+                data.recommendedSpot = spot;
+                em.persist(new VehicleTransition(v, Vehicle.State.LookingForSpot, data));
                 Transition.tick(Duration.ofMinutes(1));
             }
 
             if (start.ordinal() >= Vehicle.State.Parking.ordinal()) {
-                data.spot = Spot.anyFree().orElseThrow(AssertionError::new);
+                data.spot = spot;
                 em.persist(new VehicleTransition(v, Vehicle.State.Parking, data));
                 Transition.tick(Duration.ofHours(2));
             }
@@ -84,31 +84,31 @@ public class Vehicle$LifecycleTest {
             }
 
             return v;
-        });
+        }).state();
     }
 
     @Test
     public void lifecycle() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         if (start == null || start == Vehicle.State.Away) {
-            assertSame(Vehicle.State.Away, vehicle.state().state());
+            assertSame(Vehicle.State.Away, lifecycle.state());
         }
 
         if (start == null || start.ordinal() < Vehicle.State.LookingForSpot.ordinal()) {
-            vehicle.state().new EnteredEvent().fire();
-            assertSame(Vehicle.State.LookingForSpot, vehicle.state().state());
+            lifecycle.new EnteredEvent(Spot.anyFree().orElseThrow(AssertionError::new)).fire();
+            assertSame(Vehicle.State.LookingForSpot, lifecycle.state());
         }
 
         if (start == null || start.ordinal() < Vehicle.State.Parking.ordinal()) {
-            vehicle.state().new ParkedEvent(Spot.anyFree().orElseThrow(AssertionError::new)).fire();
-            assertSame(Vehicle.State.Parking, vehicle.state().state());
+            lifecycle.new ParkedEvent().fire();
+            assertSame(Vehicle.State.Parking, lifecycle.state());
         }
 
         if (start == null || start.ordinal() < Vehicle.State.Leaving.ordinal()) {
-            vehicle.state().new LeftSpotEvent().fire();
-            assertSame(Vehicle.State.Leaving, vehicle.state().state());
+            lifecycle.new LeftSpotEvent().fire();
+            assertSame(Vehicle.State.Leaving, lifecycle.state());
         }
 
-        vehicle.state().new LeftEvent().fire();
-        assertSame(Vehicle.State.Away, vehicle.state().state());
+        lifecycle.new LeftEvent().fire();
+        assertSame(Vehicle.State.Away, lifecycle.state());
     }
 }

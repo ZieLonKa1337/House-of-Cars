@@ -17,12 +17,12 @@
     if (window.__hoc === undefined) {
         window.__hoc = {};
     }
-    window.__hoc.status = (function () {
+    __hoc.status = (function () {
         let target = document.currentScript.previousElementSibling;
 
         let socket;
         (function connect() {
-            socket = new WebSocket('ws://' + window.location.host + '/ws/status');
+            socket = new WebSocket('ws://' + location.host + '/ws/status');
             socket.onclose = connect;
             socket.onmessage = function (msg) {
                 let data = JSON.parse(msg.data);
@@ -46,9 +46,7 @@
         };
 
         return {
-            update: function () {
-                socket.close();
-            }
+            update: socket.close
         };
     })();
     </script>

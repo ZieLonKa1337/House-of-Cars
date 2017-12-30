@@ -60,14 +60,14 @@ public class Monitor extends Broadcast {
                 try {
                     switch (Vehicle.State.valueOf(msg.getString("state"))) {
                         case LookingForSpot:
-                            vehicle.state().new EnteredEvent().fire();
-                            break;
-                        case Parking:
                             // TODO choose spot type based on past transitions or in UI
                             final Optional<Spot> spot = Spot.anyFree();
                             if (spot.isPresent()) {
-                                vehicle.state().new ParkedEvent(spot.get()).fire();
+                                vehicle.state().new EnteredEvent(spot.get()).fire();
                             }
+                            break;
+                        case Parking:
+                            vehicle.state().new ParkedEvent().fire();
                             break;
                         case Leaving:
                             vehicle.state().new LeftSpotEvent().fire();

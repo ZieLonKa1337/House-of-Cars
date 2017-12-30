@@ -1,13 +1,13 @@
 package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Spot;
+import de.codazz.houseofcars.domain.Transition;
 import de.codazz.houseofcars.domain.Vehicle;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertSame;
@@ -64,15 +64,15 @@ public class GarageMock extends Garage {
             assertSame(Vehicle.State.Away, vehicle.state().state());
 
             if (cycle || state.ordinal() > Vehicle.State.Away.ordinal()) {
-                vehicle.state().new EnteredEvent().fire();
-                assertSame(Vehicle.State.LookingForSpot, vehicle.state().state());
-            }
-            if (cycle || state.ordinal() > Vehicle.State.LookingForSpot.ordinal()) {
                 final Spot spot = spots.stream()
                     .filter(s -> s.type() == type)
                     .findAny().orElseThrow(() -> new IllegalStateException("bug in test code?"));
                 spots.remove(spot);
-                vehicle.state().new ParkedEvent(spot).fire();
+                vehicle.state().new EnteredEvent(spot).fire();
+                assertSame(Vehicle.State.LookingForSpot, vehicle.state().state());
+            }
+            if (cycle || state.ordinal() > Vehicle.State.LookingForSpot.ordinal()) {
+                vehicle.state().new ParkedEvent().fire();
                 assertSame(Vehicle.State.Parking, vehicle.state().state());
             }
             if (cycle || state.ordinal() > Vehicle.State.Parking.ordinal()) {

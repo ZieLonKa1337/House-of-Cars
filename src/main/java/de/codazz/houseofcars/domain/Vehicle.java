@@ -180,8 +180,12 @@ public class Vehicle extends Entity {
 
         /** the vehicle entered the garage */
         public final class EnteredEvent extends Event {
-            public EnteredEvent() {
+            /** the spot that was recommended to the driver */
+            public final Spot recommendedSpot;
+
+            public EnteredEvent(final Spot recommendedSpot) {
                 super(State.Away);
+                this.recommendedSpot = recommendedSpot;
             }
         }
 
@@ -192,6 +196,11 @@ public class Vehicle extends Entity {
             public ParkedEvent(final Spot spot) {
                 super(State.LookingForSpot);
                 this.spot = spot;
+            }
+
+            /** park on the recommended spot */
+            public ParkedEvent() {
+                this(Lifecycle.this.state().data.recommendedSpot);
             }
         }
 
@@ -213,12 +222,27 @@ public class Vehicle extends Entity {
     public enum State implements de.codazz.houseofcars.statemachine.State<State.Data, Event> {
         /** the vehicle is outside the garage */
         Away {
-            State on(final Lifecycle.EnteredEvent __) {
+            State on(final Lifecycle.EnteredEvent event) {
+                data.entered = event;
                 return LookingForSpot;
             }
         },
         /** the vehicle is inside the garage, looking for a spot */
         LookingForSpot {
+            @Override
+            public void onEnter(final Data data) {
+                super.onEnter(data);
+                if (data.recommendedSpot == null) { // could be restored
+                    data.recommendedSpot = data.entered.recommendedSpot;
+                }
+            }
+
+            @Override
+            public Data onExit() {
+                data.entered = null; // gc
+                return super.onExit();
+            }
+
             State on(final Lifecycle.ParkedEvent event) {
                 data.parked = event;
                 return Parking;
@@ -232,6 +256,7 @@ public class Vehicle extends Entity {
                 if (data.spot == null) { // could be restored
                     data.spot = data.parked.spot;
                 }
+                data.recommendedSpot = null;
             }
 
             @Override
@@ -279,10 +304,12 @@ public class Vehicle extends Entity {
         @Embeddable
         static class Data implements Cloneable {
             @Transient
+            transient Lifecycle.EnteredEvent entered;
+            @Transient
             transient Lifecycle.ParkedEvent parked;
 
             @ManyToOne
-            Spot spot;
+            Spot spot, recommendedSpot;
 
             // TODO tarif / payment rate?
 

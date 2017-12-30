@@ -1,5 +1,6 @@
 package de.codazz.houseofcars.websocket.subprotocol;
 
+import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.websocket.Broadcast;
 import de.codazz.houseofcars.websocket.Message;
@@ -36,6 +37,7 @@ public class Status extends Broadcast {
      * @see History#update() */
     public static void update() {
         if (instance == null) return; // XXX for testing
+        Garage.instance().persistence.refresh();
         instance.broadcast(instance.newUpdate());
         History.update();
         Monitor.update();

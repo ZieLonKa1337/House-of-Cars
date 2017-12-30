@@ -40,6 +40,7 @@ public class SpotTest {
     @Before
     public void setUp() {
         garage.reset(NUM_TOTAL, NUM_SPOTS);
+        Transition.tick(null);
     }
 
     @Test

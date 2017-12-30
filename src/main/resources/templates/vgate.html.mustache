@@ -13,24 +13,34 @@
     #gate {
         width: 35%;
     }
+
+    #recommended-spot {
+        margin: 1cm;
+        font-weight: bold;
+    }
+    #recommended-spot img {
+        height: 5em;
+    }
     </style>
     <script>
     'use strict';
-
-    let _vgate = (function () {
+    if (window.__hoc === undefined) {
+        window.__hoc = {};
+    }
+    __hoc.vgate = (function () {
         let licenseReader = document.getElementById('license-reader');
         let gate = document.getElementById('gate');
 
         let socket;
         (function connect() {
-            socket = new WebSocket('ws://' + window.location.host + '/ws/vgate');
+            socket = new WebSocket('ws://' + location.host + '/ws/vgate');
             socket.onclose = connect;
             socket.onmessage = function (msg) {
                 let data = JSON.parse(msg.data);
                 switch (data.type) {
                     case 'open-response':
                         if (!data.permission) return;
-                        state(true);
+                        state(true, data.recommendedSpot);
                         socket.send(JSON.stringify({
                             type: 'opened'
                         }));
@@ -40,7 +50,8 @@
                             state(false);
                             socket.send(JSON.stringify({
                                 type: 'entered',
-                                license: _vgate.requestOpen.license
+                                recommendedSpot: data.recommendedSpot,
+                                license: __hoc.vgate.requestOpen.license
                             }));
                         }, 1000 + Math.random() * 2000);
                         break;
@@ -48,15 +59,20 @@
             };
         })();
 
-        function state(open) {
+        function state(open, recommendedSpot) {
             let state = open ? 'open' : 'closed';
             document.getElementById('gate').src = 'gate-' + state + '.svg';
             document.getElementById('license-reader').hidden = open;
+
+            let recommendedSpotElement = document.getElementById('recommended-spot');
+            recommendedSpotElement.hidden = !open;
+            recommendedSpotElement.getElementsByTagName('h2')[0].innerHTML = recommendedSpot;
         }
 
         return {
+            state: state,
             requestOpen: function (license) {
-                _vgate.requestOpen.license = license;
+                __hoc.vgate.requestOpen.license = license;
                 socket.send(JSON.stringify({
                     type: 'open-request',
                     license: license
@@ -66,14 +82,20 @@
     })();
     </script>
 </head>
-<body>
+<body onload="__hoc.vgate.state(false);">
 {{>partials/status.html}}
 
-<img id="gate" src="gate-closed.svg" />
+<img id="gate" src="gate-closed.svg"/>
 
 <form id="license-reader" action="javascript:void(0);">
-    <input name="license" type="text" />
-    <button onclick="_vgate.requestOpen(document.getElementById('license-reader').license.value)">Enter</button>
+    <input name="license" type="text"/>
+    <button onclick="__hoc.vgate.requestOpen(document.getElementById('license-reader').license.value);">Enter</button>
 </form>
+
+<section id="recommended-spot">
+    <img src="sign_post.svg"/>
+    <h2></h2>
+</section>
+
 </body>
 </html>
