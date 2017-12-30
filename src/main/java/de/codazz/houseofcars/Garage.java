@@ -1,7 +1,5 @@
 package de.codazz.houseofcars;
 
-import de.codazz.houseofcars.domain.Spot;
-import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.History;
 import de.codazz.houseofcars.websocket.subprotocol.Monitor;
@@ -17,9 +15,6 @@ import spark.template.mustache.MustacheTemplateEngine;
 import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import static spark.Spark.*;
 
@@ -75,11 +70,16 @@ public class Garage implements Runnable, Closeable {
         webSocket("/ws/vgate", VGate.class);
 
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
-        get("/dashboard", new TemplateViewRoute() {
-            final Map<String, Object> templateValues = new HashMap<>(); {
-                templateValues.put("vehicleStates", Arrays.stream(Vehicle.State.values()).map(Enum::name).toArray(String[]::new));
+        get("/", new TemplateViewRoute() {
+            final ModelAndView modelAndView = modelAndView(Status.templateDefaults, "index.html.mustache");
+
+            @Override
+            public ModelAndView handle(final Request request, final Response response) {
+                return modelAndView;
             }
-            final ModelAndView modelAndView = modelAndView(templateValues, "dashboard.html.mustache");
+        }, templateEngine);
+        get("/dashboard", new TemplateViewRoute() {
+            final ModelAndView modelAndView = modelAndView(Monitor.templateDefaults, "dashboard.html.mustache");
 
             @Override
             public ModelAndView handle(final Request request, final Response response) {
@@ -87,10 +87,7 @@ public class Garage implements Runnable, Closeable {
             }
         }, templateEngine);
         get("/vgate", new TemplateViewRoute() {
-            final Map<String, Object> templateValues = new HashMap<>(); {
-                templateValues.put("spotTypes", Arrays.stream(Spot.Type.values()).map(Enum::name).toArray(String[]::new));
-            }
-            final ModelAndView modelAndView = modelAndView(templateValues, "vgate.html.mustache");
+            final ModelAndView modelAndView = modelAndView(Status.templateDefaults, "vgate.html.mustache");
 
             @Override
             public ModelAndView handle(final Request request, final Response response) {

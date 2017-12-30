@@ -17,12 +17,22 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** @author rstumm2s */
 @WebSocket
 public class Monitor extends Broadcast {
+    public static final Map<String, Object> templateDefaults; static {
+        final Map<String, Object> map = new HashMap<>(1);
+        map.put("vehicleStates", Arrays.stream(Vehicle.State.values()).map(Enum::name).toArray(String[]::new));
+        templateDefaults = Collections.unmodifiableMap(map);
+    }
+
     private static final Logger log = LoggerFactory.getLogger(Monitor.class);
 
     public static List<VehicleStatus> states() {
@@ -81,7 +91,6 @@ public class Monitor extends Broadcast {
                 } catch (final InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
                     log.error("failed to modify vehicle state", e);
                 }
-//                update(); // TODO remove and check
                 break;
         }
     }

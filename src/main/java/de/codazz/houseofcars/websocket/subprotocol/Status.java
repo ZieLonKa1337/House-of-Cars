@@ -9,12 +9,20 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 /** @author rstumm2s */
 @WebSocket
 public class Status extends Broadcast {
+    public static final Map<String, Object> templateDefaults; static {
+        final Map<String, Object> map = new HashMap<>(1, 1);
+        map.put("spotTypes", Arrays.stream(Spot.Type.values()).map(Enum::name).toArray(String[]::new));
+        templateDefaults = Collections.unmodifiableMap(map);
+    }
+
     private static volatile Status instance; {
         if (instance != null) throw new IllegalStateException();
         instance = this;
