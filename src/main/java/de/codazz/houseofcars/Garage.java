@@ -1,5 +1,7 @@
 package de.codazz.houseofcars;
 
+import de.codazz.houseofcars.domain.Customer;
+import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.History;
 import de.codazz.houseofcars.websocket.subprotocol.Monitor;
@@ -8,13 +10,16 @@ import de.codazz.houseofcars.websocket.subprotocol.VGate;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
+import spark.Route;
+import spark.Session;
 import spark.TemplateEngine;
-import spark.TemplateViewRoute;
 import spark.template.mustache.MustacheTemplateEngine;
 
 import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static spark.Spark.*;
 
@@ -70,30 +75,73 @@ public class Garage implements Runnable, Closeable {
         webSocket("/ws/vgate", VGate.class);
 
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
-        get("/", new TemplateViewRoute() {
-            final ModelAndView modelAndView = modelAndView(Status.templateDefaults, "index.html.mustache");
+        get("/", new Route() {
+            final ThreadLocal<ModelAndView> modelAndView = ThreadLocal.withInitial(() ->
+                modelAndView(new HashMap<>(Status.templateDefaults), "index.html.mustache")
+            );
 
             @Override
-            public ModelAndView handle(final Request request, final Response response) {
-                return modelAndView;
+            public Object handle(final Request request, final Response response) {
+                final ModelAndView modelAndView = this.modelAndView.get();
+                @SuppressWarnings("unchecked")
+                final Map<String, Object> templateValues = (Map<String, Object>) modelAndView.getModel();
+
+                synchronized (this) {
+                    final Session session = request.session(false);
+                    if (session != null) {
+                        if (request.queryParams().contains("logout")) {
+                            session.invalidate();
+                        } else if (session.attributes().contains("ui")) {
+                            templateValues.put("session", session.attribute("ui"));
+                        }
+                    }
+                }
+
+                try {
+                    return templateEngine.render(modelAndView);
+                } finally {
+                    templateValues.remove("session");
+                }
             }
-        }, templateEngine);
-        get("/dashboard", new TemplateViewRoute() {
+        });
+        post("/", (request, response) -> { // login
+            if (request.session(false) != null) return null;
+
+            final Vehicle vehicle = persistence.execute(em -> em.find(Vehicle.class, request.queryParams("license")));
+            if (vehicle != null) {
+                final Customer customer = vehicle.owner()
+                    // TODO authentication
+                    .orElseGet(() -> persistence.transact((em, __) -> {
+                        final Customer c = new Customer();
+                        vehicle.owner(c);
+                        em.persist(c);
+                        return c;
+                    }));
+
+                final Map<String, Object> ui = new HashMap<>();
+                ui.put("customer", customer);
+                request.session().attribute("ui", ui);
+            } // TODO show message that only known vehicles may be registered
+
+            response.redirect("/");
+            return null;
+        });
+        get("/dashboard", new Route() {
             final ModelAndView modelAndView = modelAndView(Monitor.templateDefaults, "dashboard.html.mustache");
 
             @Override
-            public ModelAndView handle(final Request request, final Response response) {
-                return modelAndView;
+            public Object handle(final Request request, final Response response) {
+                return templateEngine.render(modelAndView);
             }
-        }, templateEngine);
-        get("/vgate", new TemplateViewRoute() {
+        });
+        get("/vgate", new Route() {
             final ModelAndView modelAndView = modelAndView(Status.templateDefaults, "vgate.html.mustache");
 
             @Override
-            public ModelAndView handle(final Request request, final Response response) {
-                return modelAndView;
+            public Object handle(final Request request, final Response response) {
+                return templateEngine.render(modelAndView);
             }
-        }, templateEngine);
+        });
     }
 
     @Override

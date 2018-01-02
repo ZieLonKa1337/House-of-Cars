@@ -1,5 +1,12 @@
 create sequence hibernate_sequence start 1 increment 1;
 
+create table Customer (
+	id int8 not null,
+	OPTLOCK int8 not null,
+	pass bytea,
+	primary key (id)
+);
+
 create table Spot (
 	id int4 not null,
 	OPTLOCK int8 not null,
@@ -10,6 +17,7 @@ create table Spot (
 create table Vehicle (
 	license varchar(255) not null,
 	OPTLOCK int8 not null,
+	owner_id int8,
 	primary key (license)
 );
 

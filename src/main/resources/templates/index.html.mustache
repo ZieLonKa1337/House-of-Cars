@@ -12,12 +12,31 @@
         left: 6.5vw;
         text-align: center;
     }
+
+    #login input, #login button {
+        width: 25vw;
+    }
     </style>
 </head>
 <body>
 <h1>House of Cars</h1>
 {{>partials/status.html}}
 
-<form
+{{^session}}
+<form id="login" method="POST">
+    <p><input type="text" name="license" placeholder="ABXY1234"/></p>
+    <p><input type="password" name="pass" placeholder="password"/></p>
+    <button>Claim or Log in</button>
+</form>
+{{/session}}
+
+{{#session}}
+<h2>My Vehicles</h2>
+<ul>
+    {{#session.customer.vehicles}}
+    <li>{{license}}</li>
+    {{/session.customer.vehicles}}
+</ul>
+{{/session}}
 </body>
 </html>

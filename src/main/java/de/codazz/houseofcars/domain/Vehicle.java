@@ -17,6 +17,7 @@ import javax.persistence.Transient;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
@@ -97,6 +98,9 @@ public class Vehicle extends Entity {
     @Id
     private String license;
 
+    @ManyToOne
+    private Customer owner;
+
     /** @deprecated only for JPA */
     @Deprecated
     protected Vehicle() {}
@@ -107,6 +111,14 @@ public class Vehicle extends Entity {
 
     public String license() {
         return license;
+    }
+
+    public Optional<Customer> owner() {
+        return Optional.ofNullable(owner);
+    }
+
+    public void owner(final Customer owner) {
+        this.owner = owner;
     }
 
     @Transient
