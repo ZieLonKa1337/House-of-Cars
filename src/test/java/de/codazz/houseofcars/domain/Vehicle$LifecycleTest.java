@@ -45,6 +45,7 @@ public class Vehicle$LifecycleTest {
     @AfterClass
     public static void tearDownClass() {
         garage.close();
+        Transition.tick(null);
     }
 
     @Before
