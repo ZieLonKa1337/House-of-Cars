@@ -114,7 +114,7 @@ public class Monitor extends Broadcast {
             since;
 
         public VehicleStateMessage(final VehicleStatus it) {
-            vehicle_license = it.vehicleLicense();
+            vehicle_license = it.vehicle().license();
             state = it.state().name();
             since = it.since().map(zdt -> zdt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)).orElse(null);
         }

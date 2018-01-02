@@ -24,32 +24,22 @@ import java.time.ZonedDateTime;
     "SELECT COUNT(v) " +
     "FROM Vehicle v")
 @NamedQuery(name = "Vehicle.countPresent", query =
-    "SELECT COUNT(v) " +
-    "FROM Vehicle v " +
-    "WHERE NOT EXISTS (" +
-    " SELECT t" +
-    " FROM vehicle_state t" +
-    " WHERE t.vehicle_license = v.license" +
-    "  AND t.state != 'Away')")
+    "SELECT COUNT(t) " +
+    "FROM vehicle_state t " +
+    "WHERE t.state != 'Away'")
 @NamedQuery(name = "Vehicle.countPending", query =
-    "SELECT COUNT(v) " +
-    "FROM Vehicle v " +
-    "WHERE NOT EXISTS (" +
-    " SELECT t" +
-    " FROM vehicle_state t" +
-    " WHERE t.vehicle_license = v.license" +
-    "  AND t.state != 'Parking')")
+    "SELECT COUNT(t) " +
+    "FROM vehicle_state t " +
+    "WHERE t.state = 'LookingForSpot'" +
+    " OR t.state = 'Leaving'")
 @NamedQuery(name = "Vehicle.countState", query =
-    "SELECT COUNT(v) " +
-    "FROM Vehicle v " +
-    "LEFT JOIN vehicle_state t " +
-    "ON v.license = t.vehicle_license" +
-    " AND t.state = :state")
+    "SELECT COUNT(t) " +
+    "FROM vehicle_state t " +
+    "WHERE t.state = :state")
 @NamedQuery(name = "Vehicle.mayEnter", query =
     "SELECT COUNT(v) = 0 " +
-    "FROM Vehicle v, vehicle_state t " +
-    "WHERE v.license = :license" +
-    " AND v.license = t.vehicle_license" +
+    "FROM vehicle_state t " +
+    "WHERE t.$.vehicle.license = :license" +
     " AND t.state != 'Away'")
 @NamedQuery(name = "Vehicle.lastTransition", query =
     "SELECT t " +

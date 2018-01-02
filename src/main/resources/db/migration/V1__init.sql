@@ -17,8 +17,8 @@ create table VehicleTransition (
 	time timestamptz not null,
 	OPTLOCK int8 not null,
 	state varchar(255) not null,
+	recommendedSpot_id int4,
 	spot_id int4,
-	recommendedspot_id int4,
 	vehicle_license varchar(255) not null,
 	primary key (time)
 );
@@ -45,8 +45,8 @@ RETURNS SETOF vehicle_state_t AS $$
   time AS since
  FROM Vehicle
  LEFT JOIN VehicleTransition
- ON VehicleTransition.vehicle_license = Vehicle.license
-  AND time <= $1
+  ON VehicleTransition.vehicle_license = Vehicle.license
+   AND time <= $1
  ORDER BY license, time DESC
 $$ LANGUAGE sql
 IMMUTABLE;
@@ -54,13 +54,15 @@ IMMUTABLE;
 CREATE VIEW vehicle_state AS
  SELECT * FROM vehicle_state_at(CURRENT_TIMESTAMP);
 
-CREATE VIEW parking AS
+CREATE VIEW spot_state AS
  SELECT
-  VehicleTransition.spot_id,
-  vehicle_state.vehicle_license,
-  since
- FROM vehicle_state, VehicleTransition
- WHERE vehicle_state.since = VehicleTransition.time
-  AND vehicle_state.state = 'Parking'
-  AND vehicle_state.state = VehicleTransition.state
- ORDER BY since DESC;
+   Spot.id AS spot_id,
+   VehicleTransition.vehicle_license,
+   since
+ FROM Spot
+ LEFT JOIN VehicleTransition
+  ON VehicleTransition.spot_id = Spot.id
+ LEFT JOIN vehicle_state
+  ON vehicle_state.state = 'Parking'
+   AND VehicleTransition.time = vehicle_state.since
+ ORDER BY Spot.id;

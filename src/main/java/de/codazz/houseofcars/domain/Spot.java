@@ -18,41 +18,31 @@ import java.util.Optional;
     "FROM Spot s " +
     "WHERE s.type = :type")
 @NamedQuery(name = "Spot.countFree", query =
-    "SELECT COUNT(s) FROM Spot s " +
-    "WHERE NOT EXISTS (" +
-    " SELECT t" +
-    " FROM parking t" +
-    " WHERE t.spot_id = s.id)")
+    "SELECT COUNT(t) " +
+    "FROM spot_state t " +
+    "WHERE t.vehicle IS NULL")
 @NamedQuery(name = "Spot.countFreeType", query =
-    "SELECT COUNT(s) FROM Spot s " +
-    "WHERE s.type = :type" +
-    " AND NOT EXISTS (" +
-    "  SELECT t" +
-    "  FROM parking t" +
-    "  WHERE t.spot_id = s.id)")
-@NamedQuery(name = "Spot.countUsed", query =
     "SELECT COUNT(s) " +
-    "FROM Spot s " +
-    "WHERE EXISTS (" +
-    " SELECT t" +
-    " FROM parking t" +
-    " WHERE t.spot_id = s.id)")
+    "FROM Spot s, spot_state t " +
+    "WHERE s.type = :type" +
+    " AND t.$.spot = s" +
+    " AND t.vehicle IS NULL")
+@NamedQuery(name = "Spot.countUsed", query =
+    "SELECT COUNT(t) " +
+    "FROM spot_state t " +
+    "WHERE t.vehicle IS NOT NULL")
 @NamedQuery(name = "Spot.countUsedType", query =
     "SELECT COUNT(s) " +
-    "FROM Spot s " +
+    "FROM Spot s, spot_state t " +
     "WHERE s.type = :type" +
-    " AND EXISTS (" +
-    "  SELECT t" +
-    "  FROM parking t" +
-    "  WHERE t.spot_id = s.id)")
+    " AND t.$.spot = s" +
+    " AND t.vehicle IS NOT NULL")
 @NamedQuery(name = "Spot.anyFree", query =
     "SELECT s " +
-    "FROM Spot s " +
+    "FROM Spot s, spot_state t " +
     "WHERE s.type = :type" +
-    " AND NOT EXISTS (" +
-    "  SELECT t" +
-    "  FROM parking t" +
-    "  WHERE t.spot_id = s.id)")
+    " AND t.$.spot = s" +
+    " AND t.vehicle IS NULL")
 public class Spot extends Entity {
     public static long count() {
         return Garage.instance().persistence.execute(em -> em
