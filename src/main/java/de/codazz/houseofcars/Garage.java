@@ -15,6 +15,11 @@ import spark.Session;
 import spark.TemplateEngine;
 import spark.template.mustache.MustacheTemplateEngine;
 
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -25,6 +30,10 @@ import static spark.Spark.*;
 
 /** @author rstumm2s */
 public class Garage implements Runnable, Closeable {
+    static {
+        System.setProperty("java.security.auth.login.config", Garage.class.getClassLoader().getResource("jaas.conf").toString());
+    }
+
     private static final String CONFIG_FILE = "house-of-cars.json";
 
     static volatile Garage instance; {
@@ -81,7 +90,7 @@ public class Garage implements Runnable, Closeable {
             );
 
             @Override
-            public Object handle(final Request request, final Response response) {
+            public Object handle(final Request request, final Response response) throws LoginException {
                 final ModelAndView modelAndView = this.modelAndView.get();
                 @SuppressWarnings("unchecked")
                 final Map<String, Object> templateValues = (Map<String, Object>) modelAndView.getModel();
@@ -90,6 +99,10 @@ public class Garage implements Runnable, Closeable {
                     final Session session = request.session(false);
                     if (session != null) {
                         if (request.queryParams().contains("logout")) {
+                            final LoginContext loginCtx = session.attribute("context");
+                            if (loginCtx != null) {
+                                loginCtx.logout();
+                            }
                             session.invalidate();
                         } else if (session.attributes().contains("ui")) {
                             templateValues.put("session", session.attribute("ui"));
@@ -106,21 +119,43 @@ public class Garage implements Runnable, Closeable {
         });
         post("/", (request, response) -> { // login
             if (request.session(false) != null) return null;
+            final String
+                license = request.queryParams("license"),
+                pass    = request.queryParams("pass");
 
-            final Vehicle vehicle = persistence.execute(em -> em.find(Vehicle.class, request.queryParams("license")));
+            final Vehicle vehicle = persistence.execute(em -> em.find(Vehicle.class, license));
             if (vehicle != null) {
-                final Customer customer = vehicle.owner()
-                    // TODO authentication
-                    .orElseGet(() -> persistence.transact((em, __) -> {
-                        final Customer c = new Customer();
-                        vehicle.owner(c);
-                        em.persist(c);
-                        return c;
-                    }));
+                // find or create customer
+                final Customer customer = vehicle.owner().orElseGet(() -> persistence.transact((em, __) -> {
+                    final Customer c = new Customer(pass, vehicle);
+                    em.persist(c);
+                    return c;
+                }));
 
-                final Map<String, Object> ui = new HashMap<>();
-                ui.put("customer", customer);
-                request.session().attribute("ui", ui);
+                try { // authenticate
+                    final LoginContext loginCtx = new LoginContext("default", callbacks -> {
+                        for (final Callback callback : callbacks) {
+                            if (callback instanceof NameCallback) {
+                                ((NameCallback) callback).setName(license);
+                            } else if (callback instanceof PasswordCallback) {
+                                ((PasswordCallback) callback).setPassword(pass.toCharArray());
+                            }
+                        }
+                    });
+                    loginCtx.login();
+                    request.session().attribute("context", loginCtx);
+                } catch (final LoginException ignore) { /* login failed */ }
+
+                if (request.session(false) != null) { // login successful
+                    persistence.<Void>execute(em -> {
+                        em.refresh(customer);
+                        return null;
+                    });
+
+                    final Map<String, Object> ui = new HashMap<>();
+                    ui.put("customer", customer);
+                    request.session().attribute("ui", ui);
+                }
             } // TODO show message that only known vehicles may be registered
 
             response.redirect("/");

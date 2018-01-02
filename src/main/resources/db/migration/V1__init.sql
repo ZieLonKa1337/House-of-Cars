@@ -3,7 +3,7 @@ create sequence hibernate_sequence start 1 increment 1;
 create table Customer (
 	id int8 not null,
 	OPTLOCK int8 not null,
-	pass bytea,
+	pass varchar(255) not null,
 	primary key (id)
 );
 
