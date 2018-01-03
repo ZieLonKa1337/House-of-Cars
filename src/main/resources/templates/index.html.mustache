@@ -16,11 +16,21 @@
     #login input, #login button {
         width: 25vw;
     }
+
+    hr {
+        margin: .8cm 0px;
+    }
+
+    img.button {
+        height: 3em;
+    }
     </style>
 </head>
 <body>
 <h1>House of Cars</h1>
 {{>partials/status.html}}
+
+<hr/>
 
 {{^session}}
 <form id="login" method="POST">
@@ -31,6 +41,10 @@
 {{/session}}
 
 {{#session}}
+<a href="?logout">
+    <img src="exit.svg" class="button"/>
+</a>
+
 <h2>My Vehicles</h2>
 <ul>
     {{#session.customer.vehicles}}
