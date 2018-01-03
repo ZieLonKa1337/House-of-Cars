@@ -58,9 +58,9 @@ RETURNS SETOF vehicle_state_t AS $$
   CASE WHEN state IS NULL THEN 'Away'::varchar(255) ELSE state END AS state,
   time AS since
  FROM Vehicle
- LEFT JOIN VehicleTransition
-  ON VehicleTransition.vehicle_license = Vehicle.license
-   AND time <= $1
+  LEFT JOIN VehicleTransition
+   ON VehicleTransition.vehicle_license = Vehicle.license
+    AND time <= $1
  ORDER BY license, time DESC
 $$ LANGUAGE sql
 IMMUTABLE;
@@ -70,13 +70,12 @@ CREATE VIEW vehicle_state AS
 
 CREATE VIEW spot_state AS
  SELECT
-   Spot.id AS spot_id,
-   VehicleTransition.vehicle_license,
-   since
- FROM Spot
- LEFT JOIN VehicleTransition
-  ON VehicleTransition.spot_id = Spot.id
- LEFT JOIN vehicle_state
-  ON vehicle_state.state = 'Parking'
-   AND VehicleTransition.time = vehicle_state.since
+  Spot.id AS spot_id,
+  vehicle_state.vehicle_license,
+  since
+ FROM vehicle_state
+  LEFT JOIN VehicleTransition
+   ON VehicleTransition.time = since
+  RIGHT JOIN Spot
+   ON Spot.id = VehicleTransition.spot_id
  ORDER BY Spot.id;
