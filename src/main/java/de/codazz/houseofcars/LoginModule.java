@@ -2,6 +2,7 @@ package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Customer;
 import de.codazz.houseofcars.domain.Vehicle;
+import org.mindrot.jbcrypt.BCrypt;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -11,7 +12,6 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 
 /** @author rstumm2s */
@@ -40,10 +40,9 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
         }
 
         final Vehicle vehicle = Garage.instance().persistence.execute(em -> em.find(Vehicle.class, license.getName()));
-        final Customer c = vehicle.owner().orElseThrow(LoginException::new);
+        final Customer c = vehicle.owner().orElseThrow(() -> new LoginException("wrong license: " + license.getName() + " has no owner"));
         try {
-            if (!Arrays.equals(c.pass().toCharArray(), password.getPassword()))
-                // TODO check against salted hash
+            if (!BCrypt.checkpw(new String(password.getPassword()), c.pass()))
                 throw new LoginException("wrong password");
             customer = c;
             return true;
@@ -53,7 +52,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
     }
 
     @Override
-    public boolean commit() throws LoginException {
+    public boolean commit() {
         if (customer != null) {
             subject.getPrincipals().add(customer);
             return true;
@@ -62,13 +61,14 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
     }
 
     @Override
-    public boolean abort() throws LoginException {
+    public boolean abort() {
         customer = null;
         return true;
     }
 
     @Override
-    public boolean logout() throws LoginException {
+    public boolean logout() {
+        assert customer != null : "not logged in";
         subject.getPrincipals().remove(customer);
         customer = null;
         return true;

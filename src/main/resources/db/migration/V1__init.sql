@@ -3,7 +3,7 @@ create sequence hibernate_sequence start 1 increment 1;
 create table Customer (
 	id int8 not null,
 	OPTLOCK int8 not null,
-	pass varchar(255) not null,
+	pass varchar(60) not null,
 	primary key (id)
 );
 
@@ -30,6 +30,12 @@ create table VehicleTransition (
 	vehicle_license varchar(255) not null,
 	primary key (time)
 );
+
+alter table Vehicle
+	add constraint FKbca7rhv01903thhh98q0xa54d foreign key (owner_id)references Customer;
+
+alter table VehicleTransition
+	add constraint FKgm8tm50ergw7krq4w4dmwnfdc foreign key (recommendedSpot_id)references Spot;
 
 alter table VehicleTransition
 	add constraint FKfwx6x8epwf1v4meg57gifc5j1 foreign key (spot_id)references Spot;

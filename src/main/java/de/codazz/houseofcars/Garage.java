@@ -7,6 +7,7 @@ import de.codazz.houseofcars.websocket.subprotocol.History;
 import de.codazz.houseofcars.websocket.subprotocol.Monitor;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
 import de.codazz.houseofcars.websocket.subprotocol.VGate;
+import org.mindrot.jbcrypt.BCrypt;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
@@ -127,7 +128,10 @@ public class Garage implements Runnable, Closeable {
             if (vehicle != null) {
                 // find or create customer
                 final Customer customer = vehicle.owner().orElseGet(() -> persistence.transact((em, __) -> {
-                    final Customer c = new Customer(pass, vehicle);
+                    final Customer c = new Customer(
+                        BCrypt.hashpw(pass, BCrypt.gensalt()),
+                        vehicle
+                    );
                     em.persist(c);
                     return c;
                 }));

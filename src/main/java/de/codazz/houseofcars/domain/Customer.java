@@ -16,7 +16,7 @@ public class Customer extends Entity implements Principal {
     @GeneratedValue
     private long id;
 
-    @Column(nullable = false /* TODO fixed length? */)
+    @Column(nullable = false, length = 60)
     private String pass;
 
     @OneToMany(mappedBy = "owner")

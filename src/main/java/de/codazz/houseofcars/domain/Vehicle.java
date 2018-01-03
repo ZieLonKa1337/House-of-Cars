@@ -38,7 +38,7 @@ import java.util.Optional;
     "FROM vehicle_state t " +
     "WHERE t.state = :state")
 @NamedQuery(name = "Vehicle.mayEnter", query =
-    "SELECT COUNT(v) = 0 " +
+    "SELECT COUNT(t) = 0 " +
     "FROM vehicle_state t " +
     "WHERE t.$.vehicle.license = :license" +
     " AND t.state != 'Away'")
