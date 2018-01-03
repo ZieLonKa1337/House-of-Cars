@@ -48,7 +48,7 @@ public class GarageMock extends Garage {
         for (n -= 1; n >= 0; n--) {
             final Vehicle vehicle = Garage.instance().persistence.transact((em, __) -> {
                 final int numPlates = em.createQuery("SELECT COUNT(v) FROM Vehicle v", Long.class).getSingleResult().intValue();
-                final String license = String.format("AAXY%04d", numPlates);
+                final String license = String.format("ABXY%04d", numPlates);
 
                 Vehicle v = em.find(Vehicle.class, license);
                 if (v == null) {

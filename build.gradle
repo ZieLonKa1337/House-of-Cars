@@ -32,7 +32,6 @@ generateSchema {
     vendor = 'hibernate'
     packageToScan = ['de.codazz.houseofcars.domain']
     format = true
-    persistenceUnitName = 'HouseOfCars'
     databaseProductName = 'PostgreSQL'
     databaseMajorVersion = 9
     databaseMinorVersion = 6
