@@ -1,6 +1,7 @@
 package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Customer;
+import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.History;
@@ -8,6 +9,8 @@ import de.codazz.houseofcars.websocket.subprotocol.Monitor;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
 import de.codazz.houseofcars.websocket.subprotocol.VGate;
 import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
@@ -34,6 +37,8 @@ public class Garage implements Runnable, Closeable {
     static {
         System.setProperty("java.security.auth.login.config", Garage.class.getClassLoader().getResource("jaas.conf").toString());
     }
+
+    private static final Logger log = LoggerFactory.getLogger(Garage.class);
 
     private static final String CONFIG_FILE = "house-of-cars.json";
 
@@ -69,6 +74,13 @@ public class Garage implements Runnable, Closeable {
         this.config = config;
 
         persistence = new Persistence(config.jdbcUrl(), config.jdbcUser(), config.jdbcPassword());
+
+        // warn about spot types that have no fee configured
+        for (final Spot.Type type : Spot.Type.values()) {
+            if (Spot.count(type) > 0 && config.fee().get(type) == null) {
+                log.warn("no fee configured for {} spots!", type);
+            }
+        }
     }
 
     @Override

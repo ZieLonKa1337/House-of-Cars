@@ -283,7 +283,10 @@ public class Vehicle extends Entity {
                     data.parked = null; // gc
                 }
                 if (data.fee == null) { // could be restored
-                    data.fee = Garage.instance().config.fee();
+                    data.fee = Garage.instance().config.fee().get(data.spot.type());
+                    if (data.fee == null) {
+                        log.error("no fee configured for {} spots!", data.spot.type());
+                    }
                 }
             }
 

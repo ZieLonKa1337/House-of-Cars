@@ -119,7 +119,10 @@ public class Monitor extends Broadcast {
             vehicle_license = it.vehicle().license();
             state = it.state().name();
             since = it.since().map(zdt -> zdt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)).orElse(null);
-            paid = it.vehicle().lastTransition().data().paid();
+            final VehicleTransition transition = it.vehicle().lastTransition();
+            paid = transition != null
+                ? transition.data().paid()
+                : null;
         }
     }
 }

@@ -3,5 +3,9 @@
   "jdbcUrl": "jdbc:postgresql://localhost:5432/houseofcars-test",
   "jdbcUser": "houseofcars-test",
   "jdbcPassword": "h-brs",
-  "fee": 2
+  "fee": {
+    "CAR": 1,
+    "BIKE": 2,
+    "HANDICAP": 3
+  }
 }

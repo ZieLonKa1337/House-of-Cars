@@ -1,6 +1,10 @@
 package de.codazz.houseofcars;
 
+import de.codazz.houseofcars.domain.Spot;
+
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 
 /** @author rstumm2s */
 public interface Config {
@@ -8,7 +12,7 @@ public interface Config {
     String jdbcUrl();
     String jdbcUser();
     String jdbcPassword();
-    BigDecimal fee();
+    Map<Spot.Type, BigDecimal> fee();
 
     /** @param other the instance to merge into this
      * @param intoOther if {@code true}, merge this into {@code other}
@@ -18,7 +22,7 @@ public interface Config {
 
         int port;
         String jdbcUrl, jdbcUser, jdbcPassword;
-        BigDecimal fee;
+        final Map<Spot.Type, BigDecimal> fee = new HashMap<>();
 
         final Config innerOther;
         if (intoOther) {
@@ -26,22 +30,24 @@ public interface Config {
             jdbcUrl = other.jdbcUrl();
             jdbcUser = other.jdbcUser();
             jdbcPassword = other.jdbcPassword();
-            fee = other.fee();
+            fee.putAll(fee());
+            fee.putAll(other.fee());
             innerOther = this;
         } else {
             port = port();
             jdbcUrl = jdbcUrl();
             jdbcUser = jdbcUser();
             jdbcPassword = jdbcPassword();
-            fee = fee();
+            fee.putAll(other.fee());
+            fee.putAll(fee());
             innerOther = other;
         }
         if (port == 0) port = innerOther.port();
         if (jdbcUrl == null) jdbcUrl = innerOther.jdbcUrl();
         if (jdbcUser == null) jdbcUser = innerOther.jdbcUser();
         if (jdbcPassword == null) jdbcPassword = innerOther.jdbcPassword();
-        if (fee == null) fee = innerOther.fee();
+        // fee already merged
 
-        return new AbstractConfig(port, jdbcUrl, jdbcUser, jdbcPassword, fee) {};
+        return new AbstractConfig(port, jdbcUrl, jdbcUser, jdbcPassword, fee);
     }
 }

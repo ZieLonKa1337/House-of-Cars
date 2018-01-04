@@ -52,6 +52,7 @@
                         .filter(function (it) {
                             return it.state == td.dataset.state;
                         })
+                        .sort((a, b) => a.paid > b.paid)
                         .forEach(function (it) {
                             listHTML += '<li draggable="true" ondragstart="__hoc.monitor.dnd.dragstart(event);" ';
                             listHTML += 'data-vehicle="';
