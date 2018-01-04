@@ -1,0 +1,13 @@
+/* rstumm2s */
+
+body {
+    background: beige;
+}
+
+@media screen and (min-width: 500px) {
+    body {
+        position: relative;
+        width: 85vw;
+        left: 6.5vw;
+    }
+}
