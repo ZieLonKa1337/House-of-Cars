@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,7 +40,7 @@ public class Gate {
     }
 
     @OnWebSocketMessage
-    public void message(final Session session, final String message) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void message(final Session session, final String message) throws IOException {
         log.trace("{}: {}", session.getRemoteAddress(), message);
         final Message response = handle(jsonReader.parse(message), states.get(session));
         if (response != null) {
@@ -49,7 +48,7 @@ public class Gate {
         }
     }
 
-    protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) {
         switch (msg.getString("type")) {
             case "open-request":
                 return new OpenResponse(state.requestOpen(msg.getString("license")), Spot.anyFree().map(Spot::id).orElse(-1));

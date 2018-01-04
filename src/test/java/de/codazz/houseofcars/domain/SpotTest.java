@@ -7,7 +7,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,7 +52,7 @@ public class SpotTest {
     }
 
     @Test
-    public void countFree() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public void countFree() {
         assertEquals(NUM_TOTAL, Spot.countFree());
 
         int total = 0;
@@ -76,7 +75,7 @@ public class SpotTest {
     }
 
     @Test
-    public void countUsed() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public void countUsed() {
         assertEquals(0, Spot.countUsed());
 
         int total = 0;
@@ -99,7 +98,7 @@ public class SpotTest {
     }
 
     @Test
-    public void anyFree() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public void anyFree() {
         for (final Spot.Type type : Spot.Type.values()) {
             assertTrue(Spot.anyFree(type).isPresent());
 

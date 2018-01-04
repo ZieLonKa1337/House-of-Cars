@@ -48,7 +48,7 @@ public class Garage implements Runnable, Closeable {
 
     public final Persistence persistence;
 
-    private final Config config;
+    public final Config config;
 
     /** whether the {@link spark.Spark spark} has {@link spark.Service#ignite() ignited} */
     private boolean spark;

@@ -14,7 +14,7 @@ import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQuery;
 import javax.persistence.SqlResultSetMapping;
 import javax.persistence.Transient;
-import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -78,7 +78,7 @@ public class Vehicle extends Entity {
             .getSingleResult());
     }
 
-    public static long count(final Vehicle.State state) {
+    public static long count(final State state) {
         return Garage.instance().persistence.execute(em -> em
             .createNamedQuery("Vehicle.countState", Long.class)
             .setParameter("state", state.name())
@@ -87,7 +87,7 @@ public class Vehicle extends Entity {
 
     /** @param time when the state was entered
      * @return the number of vehicles in the given state at the given time */
-    public static int count(final Vehicle.State state, final ZonedDateTime time) {
+    public static int count(final State state, final ZonedDateTime time) {
         return Garage.instance().persistence.execute(em -> em
             .createNamedQuery("Vehicle.countStateAt", BigInteger.class)
             .setParameter("state", state.name())
@@ -121,16 +121,20 @@ public class Vehicle extends Entity {
         this.owner = owner;
     }
 
+    public VehicleTransition lastTransition() {
+        return Garage.instance().persistence.execute(em -> em
+            .createNamedQuery("Vehicle.lastTransition", VehicleTransition.class)
+            .setMaxResults(1)
+            .setParameter("vehicle", this)
+            .getResultStream().findFirst().orElse(null));
+    }
+
     @Transient
     private transient volatile Lifecycle lifecycle;
 
     /** do not cache! may be a new instance */
     public Lifecycle state() {
-        return state(Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Vehicle.lastTransition", VehicleTransition.class)
-            .setMaxResults(1)
-            .setParameter("vehicle", this)
-            .getResultStream().findFirst().orElse(null)));
+        return state(lastTransition());
     }
 
     /** restore to specified state
@@ -139,7 +143,7 @@ public class Vehicle extends Entity {
         if (init == null) {
             lifecycle = new Lifecycle(new VehicleTransition(this,
                 State.Away,
-                new State.Data() // TODO hand in parking rate?
+                new State.Data()
             ));
         } else if (lifecycle == null || lifecycle.state() != init.state()) {
             lifecycle = new Lifecycle(init);
@@ -149,10 +153,10 @@ public class Vehicle extends Entity {
 
     /** marker interface */
     interface Event {
-        void fire() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException;
+        void fire();
     }
 
-    public class Lifecycle extends EnumStateMachine<State, Vehicle.State.Data, Event> {
+    public class Lifecycle extends EnumStateMachine<State, State.Data, Event> {
         private Lifecycle(final VehicleTransition init) {
             super(init);
         }
@@ -163,16 +167,30 @@ public class Vehicle extends Entity {
             }
 
             @Override
-            public void fire() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+            public void fire() {
                 Lifecycle.this.fire(this);
             }
         }
 
         @Override
+        public void fire(final Vehicle.Event event) {
+            // clone data to avoid modification of past transitions
+            data = state().data = state().data.clone();
+            super.fire(event);
+        }
+
+        @Override
         protected VehicleTransition transition(final State state, final Vehicle.State.Data data) {
-            log.debug("{}: {} -> {}", license, state(), state);
+            if (state != null) { // outer transition
+                log.debug("{}: {} -> {}", license, state(), state);
+            } else { // inner transition
+                log.debug("{}: {}", license, state());
+            }
             final VehicleTransition transition = Garage.instance().persistence.transact((em, __) -> {
-                final VehicleTransition t = new VehicleTransition(Vehicle.this, state, data);
+                final VehicleTransition t = new VehicleTransition(Vehicle.this,
+                    state != null ? state : state(),
+                    data
+                );
                 em.persist(t);
                 return t;
             });
@@ -207,16 +225,26 @@ public class Vehicle extends Entity {
         }
 
         /** the vehicle left its spot, we stop pricing here */
-        public final class LeftSpotEvent extends Event {
-            public LeftSpotEvent() {
+        public final class FreedEvent extends Event {
+            public FreedEvent() {
                 super(State.Parking);
             }
         }
 
-        /** the vehicle left the garage through a gate */
-        public final class LeftEvent extends Event {
-            public LeftEvent() {
+        /** the parking duration is paid for
+         * and the vehicle may now leave */
+        public final class PaidEvent extends Event {
+            public PaidEvent() {
                 super(State.Leaving);
+            }
+        }
+
+        /** let the vehicle leave */
+        public final class LeaveEvent extends Event {
+            public LeaveEvent() {
+                super(State.Leaving);
+                if (!state().data.paid)
+                    throw new IllegalStateException("not yet paid!");
             }
         }
     }
@@ -236,13 +264,8 @@ public class Vehicle extends Entity {
                 super.onEnter(data);
                 if (data.recommendedSpot == null) { // could be restored
                     data.recommendedSpot = data.entered.recommendedSpot;
+                    data.entered = null; // gc
                 }
-            }
-
-            @Override
-            public Data onExit() {
-                data.entered = null; // gc
-                return super.onExit();
             }
 
             State on(final Lifecycle.ParkedEvent event) {
@@ -257,17 +280,14 @@ public class Vehicle extends Entity {
                 super.onEnter(data);
                 if (data.spot == null) { // could be restored
                     data.spot = data.parked.spot;
+                    data.parked = null; // gc
                 }
-                data.recommendedSpot = null;
+                if (data.fee == null) { // could be restored
+                    data.fee = Garage.instance().config.fee();
+                }
             }
 
-            @Override
-            public Data onExit() {
-                data.parked = null; // gc
-                return super.onExit();
-            }
-
-            State on(final Lifecycle.LeftSpotEvent __) {
+            State on(final Lifecycle.FreedEvent __) {
                 return Leaving;
             }
         },
@@ -276,10 +296,17 @@ public class Vehicle extends Entity {
             @Override
             public void onEnter(final Data data) {
                 super.onEnter(data);
-                data.spot = null;
+                if (data.paid == null) { // could be restored
+                    data.paid = false;
+                }
             }
 
-            State on(final Lifecycle.LeftEvent __) {
+            void on(final Lifecycle.PaidEvent __) {
+                if (data.paid) throw new IllegalStateException("already paid");
+                data.paid = true;
+            }
+
+            State on(final Lifecycle.LeaveEvent __) {
                 return Away;
             }
         };
@@ -293,18 +320,22 @@ public class Vehicle extends Entity {
 
         @Override
         public Data onExit() {
+            /* null out everything here
+             * so we don't need to in each state */
+            data.spot = null;
+            data.recommendedSpot = null;
+            data.fee = null;
+            data.paid = null;
             try {
-                /* do not propagate the same data instance between states!
-                 * it's embedded so you will modify past transitions */
-                return data.clone();
+                return data;
             } finally {
-                data = null;
+                this.data = null; // gc
             }
         }
 
         /** @author rstumm2s */
         @Embeddable
-        static class Data implements Cloneable {
+        public static class Data implements Cloneable {
             @Transient
             transient Lifecycle.EnteredEvent entered;
             @Transient
@@ -313,7 +344,14 @@ public class Vehicle extends Entity {
             @ManyToOne
             Spot spot, recommendedSpot;
 
-            // TODO tarif / payment rate?
+            /** &lt;currency&gt; per hour */
+            BigDecimal fee;
+            /** {@code null}: nothing to pay */
+            Boolean paid;
+
+            public Boolean paid() {
+                return paid;
+            }
 
             @Override
             public Data clone() {

@@ -24,6 +24,8 @@ create table Vehicle (
 create table VehicleTransition (
 	time timestamptz not null,
 	OPTLOCK int8 not null,
+	fee numeric(16, 8), -- big enough for Bitcoin
+	paid boolean,
 	state varchar(255) not null,
 	recommendedSpot_id int4,
 	spot_id int4,

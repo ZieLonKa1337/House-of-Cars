@@ -3,6 +3,7 @@ package de.codazz.houseofcars;
 import com.esotericsoftware.jsonbeans.Json;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 
 /** @author rstumm2s */
 public class ConfigImpl extends AbstractConfig {
@@ -13,6 +14,10 @@ public class ConfigImpl extends AbstractConfig {
     }
 
     public ConfigImpl() {
-        super(80, "jdbc:postgresql://localhost:5432/houseofcars", "houseofcars", null);
+        super(
+            80,
+            "jdbc:postgresql://localhost:5432/houseofcars", "houseofcars", null,
+            null
+        );
     }
 }

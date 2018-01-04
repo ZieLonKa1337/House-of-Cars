@@ -9,7 +9,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
-import java.lang.reflect.InvocationTargetException;
 
 import static de.codazz.houseofcars.domain.SpotTest.NUM_SPOTS;
 import static de.codazz.houseofcars.domain.SpotTest.NUM_TOTAL;
@@ -39,7 +38,7 @@ public class GateTest {
 
     /** HOC-4 */
     @Test
-    public void US4() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public void US4() {
         assertEquals(Gate.State.Closed, machine.state());
         assertEquals(0, Vehicle.countPending());
 

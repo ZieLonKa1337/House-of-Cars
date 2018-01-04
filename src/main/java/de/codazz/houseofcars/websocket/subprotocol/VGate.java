@@ -2,15 +2,12 @@ package de.codazz.houseofcars.websocket.subprotocol;
 
 import com.esotericsoftware.jsonbeans.JsonValue;
 import de.codazz.houseofcars.Garage;
-import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.websocket.Message;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,7 +18,7 @@ public class VGate extends Gate {
     private static final Logger log = LoggerFactory.getLogger(VGate.class);
 
     @Override
-    protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) {
         final Message response = super.handle(msg, state);
 
         /* instead of implementing the spot license readers
@@ -38,14 +35,8 @@ public class VGate extends Gate {
                     public void run() {
                         timer.cancel();
 
-                        final Vehicle vehicle = Garage.instance().persistence.execute(em -> em.find(Vehicle.class, license));
-
-                        try {
-                            vehicle.state().new ParkedEvent().fire();
-                        } catch (final InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-                            log.error("failed to update state of {}", vehicle.license());
-                            throw new RuntimeException(e);
-                        }
+                        Garage.instance().persistence.execute(em -> em.find(Vehicle.class, license))
+                            .state().new ParkedEvent().fire();
                     }
                 }, delay);
             } break;

@@ -7,8 +7,6 @@ import de.codazz.houseofcars.statemachine.EnumStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
-
 /** @author rstumm2s */
 public class Gate extends EnumStateMachine<Gate.State, Void, Gate.Event> {
     private static final Logger log = LoggerFactory.getLogger(Gate.class);
@@ -36,13 +34,9 @@ public class Gate extends EnumStateMachine<Gate.State, Void, Gate.Event> {
                     return v;
                 });
 
-                try {
-                    vehicle.state().new EnteredEvent(
-                        Garage.instance().persistence.execute(em -> em.find(Spot.class, event.recommendedSpot))
-                    ).fire();
-                } catch (final InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
-                    log.error("failed to mutate state of vehicle {}", event.license);
-                }
+                vehicle.state().new EnteredEvent(
+                    Garage.instance().persistence.execute(em -> em.find(Spot.class, event.recommendedSpot))
+                ).fire();
 
                 return Closed;
             }
@@ -57,7 +51,7 @@ public class Gate extends EnumStateMachine<Gate.State, Void, Gate.Event> {
             super(state);
         }
 
-        public void fire() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        public void fire() {
             Gate.this.fire(this);
         }
     }

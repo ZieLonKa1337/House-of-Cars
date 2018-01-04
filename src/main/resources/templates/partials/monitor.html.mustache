@@ -60,6 +60,15 @@
                             listHTML += it.state
                             listHTML += '">';
                             listHTML += it.vehicle_license;
+                            if (it.state == 'Leaving') {
+                                listHTML += '<input type="checkbox" onchange="__hoc.monitor.pay(\'';
+                                listHTML += it.vehicle_license;
+                                listHTML += '\', this);" ';
+                                if (it.paid) {
+                                    listHTML += 'checked="" disabled="" ';
+                                }
+                                listHTML += '/>';
+                            }
                             listHTML += '</li>';
                         });
                     listHTML += '</ul>';
@@ -90,6 +99,15 @@
                         state: event.currentTarget.dataset.state
                     }));
                 }
+            },
+            pay: function (vehicle, checkbox) {
+                if (checkbox) {
+                    checkbox.disabled = true;
+                }
+                socket.send(JSON.stringify({
+                    type: 'pay',
+                    vehicle: vehicle
+                }));
             }
         };
     })();

@@ -1,12 +1,10 @@
 package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Spot;
-import de.codazz.houseofcars.domain.Transition;
 import de.codazz.houseofcars.domain.Vehicle;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -43,7 +41,7 @@ public class GarageMock extends Garage {
     }
 
     @SuppressWarnings("unchecked")
-    public Vehicle[] park(final Spot.Type type, final Vehicle.State state, int n) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public Vehicle[] park(final Spot.Type type, final Vehicle.State state, int n) {
         final Vehicle[] vehicles = new Vehicle[n];
         for (n -= 1; n >= 0; n--) {
             final Vehicle vehicle = Garage.instance().persistence.transact((em, __) -> {
@@ -76,11 +74,12 @@ public class GarageMock extends Garage {
                 assertSame(Vehicle.State.Parking, vehicle.state().state());
             }
             if (cycle || state.ordinal() > Vehicle.State.Parking.ordinal()) {
-                vehicle.state().new LeftSpotEvent().fire();
+                vehicle.state().new FreedEvent().fire();
                 assertSame(Vehicle.State.Leaving, vehicle.state().state());
             }
             if (cycle) {
-                vehicle.state().new LeftEvent().fire();
+                vehicle.state().new PaidEvent().fire();
+                vehicle.state().new LeaveEvent().fire();
                 assertSame(Vehicle.State.Away, vehicle.state().state());
             }
         }

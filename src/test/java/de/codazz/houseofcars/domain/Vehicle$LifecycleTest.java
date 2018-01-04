@@ -9,13 +9,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.FileNotFoundException;
-import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Arrays;
 
 import static de.codazz.houseofcars.domain.SpotTest.NUM_SPOTS;
 import static de.codazz.houseofcars.domain.SpotTest.NUM_TOTAL;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 /** @author rstumm2s */
 @RunWith(Parameterized.class)
@@ -89,7 +89,7 @@ public class Vehicle$LifecycleTest {
     }
 
     @Test
-    public void lifecycle() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public void lifecycle() {
         if (start == null || start == Vehicle.State.Away) {
             assertSame(Vehicle.State.Away, lifecycle.state());
         }
@@ -105,11 +105,22 @@ public class Vehicle$LifecycleTest {
         }
 
         if (start == null || start.ordinal() < Vehicle.State.Leaving.ordinal()) {
-            lifecycle.new LeftSpotEvent().fire();
+            lifecycle.new FreedEvent().fire();
             assertSame(Vehicle.State.Leaving, lifecycle.state());
         }
 
-        lifecycle.new LeftEvent().fire();
+        { // try to leave before paying
+            IllegalStateException notYetPaid = null;
+            try {
+                lifecycle.new LeaveEvent().fire();
+            } catch (final IllegalStateException e) {
+                notYetPaid = e;
+            }
+            assertNotNull(notYetPaid);
+        }
+        lifecycle.new PaidEvent().fire();
+
+        lifecycle.new LeaveEvent().fire();
         assertSame(Vehicle.State.Away, lifecycle.state());
     }
 }
