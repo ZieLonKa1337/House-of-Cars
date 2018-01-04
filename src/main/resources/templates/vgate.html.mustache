@@ -28,7 +28,7 @@
     if (window.__hoc === undefined) {
         window.__hoc = {};
     }
-    __hoc.vgate = (function () {
+    __hoc.vgate = (() => {
         let licenseReader = document.getElementById('license-reader');
         let gate = document.getElementById('gate');
 
@@ -36,7 +36,7 @@
         (function connect() {
             socket = new WebSocket('ws://' + location.host + '/ws/vgate');
             socket.onclose = connect;
-            socket.onmessage = function (msg) {
+            socket.onmessage = msg => {
                 let data = JSON.parse(msg.data);
                 switch (data.type) {
                     case 'open-response':
@@ -47,7 +47,7 @@
                         }));
 
                         // simulate vehicle driving in
-                        setTimeout(function () {
+                        setTimeout(() => {
                             state(false);
                             socket.send(JSON.stringify({
                                 type: 'entered',
@@ -72,7 +72,7 @@
 
         return {
             state: state,
-            requestOpen: function (license) {
+            requestOpen: license => {
                 __hoc.vgate.requestOpen.license = license;
                 socket.send(JSON.stringify({
                     type: 'open-request',

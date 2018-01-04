@@ -32,14 +32,14 @@
     if (window.__hoc === undefined) {
         window.__hoc = {};
     }
-    __hoc.monitor = (function () {
+    __hoc.monitor = (() => {
         let target = document.currentScript.previousElementSibling;
 
         let socket;
         (function connect() {
             socket = new WebSocket('ws://' + location.host + '/ws/status/monitor');
             socket.onclose = connect;
-            socket.onmessage = function (msg) {
+            socket.onmessage = msg => {
                 let data = JSON.parse(msg.data);
 
                 let tds = target.getElementsByTagName('td');
@@ -49,11 +49,11 @@
 
                     let listHTML = '<ul>';
                     data // XXX move grouping to server / db query
-                        .filter(function (it) {
+                        .filter(it => {
                             return it.state == td.dataset.state;
                         })
                         .sort((a, b) => a.paid > b.paid)
-                        .forEach(function (it) {
+                        .forEach(it => {
                             listHTML += '<li draggable="true" ondragstart="__hoc.monitor.dnd.dragstart(event);" ';
                             listHTML += 'data-vehicle="';
                             listHTML += it.vehicle_license;
@@ -81,17 +81,17 @@
 
         return {
             dnd: {
-                dragstart: function (event) {
+                dragstart: event => {
                     event.dataTransfer.setData('text/plain', JSON.stringify({
                         vehicle: event.target.dataset.vehicle,
                         state: event.target.dataset.state
                     }));
                 },
-                dragover: function (event) {
+                dragover: event => {
                     event.preventDefault();
                     event.dataTransfer.dropEffect = 'move';
                 },
-                drop: function (event) {
+                drop: event => {
                     event.preventDefault();
                     let payload = JSON.parse(event.dataTransfer.getData('text'));
                     socket.send(JSON.stringify({
@@ -101,7 +101,7 @@
                     }));
                 }
             },
-            pay: function (vehicle, checkbox) {
+            pay: (vehicle, checkbox) => {
                 if (checkbox) {
                     checkbox.disabled = true;
                 }

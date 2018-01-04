@@ -12,7 +12,7 @@
     <canvas></canvas>
     <script>
     'use strict';
-    (function () {
+    (() => {
         Chart.controllers.lineWithCurrent = Chart.controllers.line.extend({
             initialize: function () {
                 Chart.controllers.line.prototype.initialize.apply(this, arguments);
@@ -85,12 +85,12 @@
         (function connect() {
             socket = new WebSocket('ws://' + location.host + '/ws/status/history');
             socket.onclose = connect;
-            socket.onmessage = function (msg) {
+            socket.onmessage = msg => {
                 let data = JSON.parse(msg.data);
                 switch (data.type) {
                     case 'graph':
                         chart.data.datasets = data.datasets;
-                        chart.data.datasets.forEach(function (it) {
+                        chart.data.datasets.forEach(it => {
                             it.backgroundColor = getPattern('hsla(' + Math.floor(360 * Math.random()) + ', 100%, 50%, 0.75)');
                             it.borderColor = 'black';
                             it.borderWidth = 1;
@@ -98,7 +98,7 @@
                         chart.update();
                         break;
                     case 'graph-update':
-                        chart.data.datasets.forEach(function (it) {
+                        chart.data.datasets.forEach(it => {
                             if (it.label == data.dataset) {
                                 it.data.push(data.datapoint);
                             }
