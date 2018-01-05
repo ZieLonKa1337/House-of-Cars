@@ -30,7 +30,7 @@
 
                 let metaData = this.getMeta().data[this.getMeta().data.length - 1];
                 let x = metaData._model.x;
-                let y = this.calculatePointY(last.y * ease);
+                let y = this.calculatePointY(last.y /* * ease XXX (jumps on mouse movement) */);
 
                 let offsetY = y + ctx.lineWidth / 2;
                 ctx.strokeStyle = metaData._view.backgroundColor;
@@ -61,7 +61,12 @@
             options: {
                 maintainAspectRatio: false,
                 hover: {
-                    mode: 'index'
+                    mode: 'index',
+                    intersect: false
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false
                 },
                 elements: {
                     line: {
