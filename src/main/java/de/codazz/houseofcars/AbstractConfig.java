@@ -9,13 +9,18 @@ import java.util.Map;
 import java.util.Objects;
 
 /** @author rstumm2s */
-class AbstractConfig implements Config {
+public class AbstractConfig implements Config {
     protected int port;
     protected String jdbcUrl, jdbcUser, jdbcPassword;
     protected HashMap<String, String> fee;
     protected transient Map<Spot.Type, BigDecimal> _fee;
 
-    AbstractConfig(
+    /** Creates an uninitialized instance.
+     * It is up to the subclass or caller
+     * to prepare it for usage. */
+    protected AbstractConfig() {}
+
+    public AbstractConfig(
         final int port,
         final String jdbcUrl, final String jdbcUser, final String jdbcPassword,
         final Map<Spot.Type, BigDecimal> fee
@@ -25,7 +30,7 @@ class AbstractConfig implements Config {
         this.jdbcUser = jdbcUser;
         this.jdbcPassword = jdbcPassword;
         this.fee = new HashMap<>(Spot.Type.values().length, 1);
-        if (Objects.requireNonNull(fee) != null) {
+        if ((_fee = fee) != null) {
             fee.forEach((key, value) -> this.fee.put(key.name(), value.toPlainString()));
         }
     }

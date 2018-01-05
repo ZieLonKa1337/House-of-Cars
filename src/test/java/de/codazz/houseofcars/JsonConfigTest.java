@@ -10,19 +10,19 @@ import java.io.IOException;
 import static org.junit.Assert.*;
 
 /** @author rstumm2s */
-public class ConfigImplTest {
+public class JsonConfigTest {
     static final String CONFIG = "src/test/resources/config-test.json";
 
     static Config config;
 
     @BeforeClass
     public static void setUp() throws IOException {
-        config = ConfigImpl.load(new FileInputStream(CONFIG));
+        config = JsonConfig.load(new FileInputStream(CONFIG));
     }
 
     @Test
     public void defaults() {
-        final Config config = new ConfigImpl();
+        final Config config = new JsonConfig();
 
         assertEquals(80, config.port());
 

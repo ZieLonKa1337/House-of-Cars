@@ -352,6 +352,10 @@ public class Vehicle extends Entity {
             /** {@code null}: nothing to pay */
             Boolean paid;
 
+            public BigDecimal fee() {
+                return fee;
+            }
+
             public Boolean paid() {
                 return paid;
             }

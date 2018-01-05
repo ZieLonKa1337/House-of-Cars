@@ -14,12 +14,15 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /** @author rstumm2s */
 @WebSocket
@@ -112,17 +115,29 @@ public class Monitor extends Broadcast {
         public final String
             vehicle_license,
             state,
-            since;
+            since,
+            price;
         public final Boolean paid;
 
         public VehicleStateMessage(final VehicleStatus it) {
             vehicle_license = it.vehicle().license();
             state = it.state().name();
-            since = it.since().map(zdt -> zdt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)).orElse(null);
+
+            since = it.since()
+                .map(since -> since.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .orElse(null);
+
             final VehicleTransition transition = it.vehicle().lastTransition();
-            paid = transition != null
-                ? transition.data().paid()
-                : null;
+            if (transition != null) {
+                paid = transition.data().paid();
+                price = transition.price()
+                    // TODO configurable scale
+                    .map(p -> p.setScale(2, RoundingMode.DOWN).toPlainString())
+                    .orElse(null);
+            } else {
+                paid = null;
+                price = null;
+            }
         }
     }
 }

@@ -74,7 +74,7 @@ CREATE VIEW spot_state AS
  SELECT
   Spot.id AS spot_id,
   vehicle_state.vehicle_license,
-  since
+  since -- TODO show freed time
  FROM vehicle_state
   LEFT JOIN VehicleTransition
    ON VehicleTransition.time = since

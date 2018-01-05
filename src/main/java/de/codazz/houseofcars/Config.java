@@ -14,10 +14,11 @@ public interface Config {
     String jdbcPassword();
     Map<Spot.Type, BigDecimal> fee();
 
-    /** @param other the instance to merge into this
-     * @param intoOther if {@code true}, merge this into {@code other}
+    /** @param other the instance to merge into this instance
+     * @param preserveOther if {@code true}, entries from
+     *     the other instance are preserved instead of this
      * @return a new or identical instance */
-    default Config merge(final Config other, final boolean intoOther) {
+    default Config merge(final Config other, final boolean preserveOther) {
         if (equals(other)) return this;
 
         int port;
@@ -25,7 +26,7 @@ public interface Config {
         final Map<Spot.Type, BigDecimal> fee = new HashMap<>();
 
         final Config innerOther;
-        if (intoOther) {
+        if (preserveOther) {
             port = other.port();
             jdbcUrl = other.jdbcUrl();
             jdbcUser = other.jdbcUser();

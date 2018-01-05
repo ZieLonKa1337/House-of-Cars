@@ -91,6 +91,7 @@
                     case 'graph':
                         chart.data.datasets = data.datasets;
                         chart.data.datasets.forEach(it => {
+                            // TODO preserve pattern when socket reconnects
                             it.backgroundColor = getPattern('hsla(' + Math.floor(360 * Math.random()) + ', 100%, 50%, 0.75)');
                             it.borderColor = 'black';
                             it.borderWidth = 1;

@@ -61,14 +61,19 @@
                             listHTML += it.state
                             listHTML += '">';
                             listHTML += it.vehicle_license;
-                            if (it.state == 'Leaving') {
-                                listHTML += '<input type="checkbox" onchange="__hoc.monitor.pay(\'';
+                            if (it.paid != null) {
+                                listHTML += ' (';
+                                listHTML += it.price;
+
+                                listHTML += ' <input type="checkbox" onchange="__hoc.monitor.pay(\'';
                                 listHTML += it.vehicle_license;
                                 listHTML += '\', this);" ';
                                 if (it.paid) {
                                     listHTML += 'checked="" disabled="" ';
                                 }
-                                listHTML += '/>';
+                                listHTML += '/>'
+
+                                listHTML += ')';
                             }
                             listHTML += '</li>';
                         });

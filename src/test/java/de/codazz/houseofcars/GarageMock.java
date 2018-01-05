@@ -15,7 +15,7 @@ public class GarageMock extends Garage {
     public final ArrayList<Spot> spots = new ArrayList<>();
 
     public GarageMock() throws FileNotFoundException {
-        super(ConfigImpl.load(new FileInputStream(ConfigImplTest.CONFIG)));
+        super(JsonConfig.load(new FileInputStream(JsonConfigTest.CONFIG)));
         persistence.executor = new ExecutorServiceMock();
     }
 

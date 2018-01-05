@@ -64,21 +64,19 @@ public class Garage implements Runnable, Closeable {
 
     public Garage(Config config) {
         if (config == null) {
-            config = new ConfigImpl();
+            config = new JsonConfig();
             try {
-                final Config userConfig = ConfigImpl.load(new FileInputStream(CONFIG_FILE)),
-                    defaults = new ConfigImpl();
-                config = userConfig.merge(defaults, false);
+                config = JsonConfig.load(new FileInputStream(CONFIG_FILE)).merge(config, false);
             } catch (final FileNotFoundException ignore) {}
         }
         this.config = config;
 
         persistence = new Persistence(config.jdbcUrl(), config.jdbcUser(), config.jdbcPassword());
 
-        // warn about spot types that have no fee configured
+        // check that all spot types have a fee configured
         for (final Spot.Type type : Spot.Type.values()) {
             if (Spot.count(type) > 0 && config.fee().get(type) == null) {
-                log.warn("no fee configured for {} spots!", type);
+                throw new IllegalStateException("no fee configured for " + type + "spots!");
             }
         }
     }
