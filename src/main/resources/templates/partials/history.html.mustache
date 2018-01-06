@@ -3,7 +3,38 @@
     <style>
     .chart-container {
         position: relative;
-        height: 50vh;
+        height: 40vh;
+        resize: vertical;
+        overflow: auto;
+    }
+
+    @supports (-webkit-appearance: none) {
+        .chart-container {
+            /* resize knob not reachable */
+            padding-bottom: .7em;
+        }
+    }
+
+    table.statistics {
+        border-spacing: .5em;
+    }
+
+    .statistic {
+        background: burlywood;
+        border: 2px ridge gray;
+        border-radius: .225cm;
+        text-align: center;
+        margin: .5em .25em;
+        padding: .25em;
+    }
+
+    .statistic h3 {
+        margin-top: 0px;
+        margin-bottom: .5em;
+    }
+
+    .statistic table {
+        margin: auto;
     }
     </style>
 
@@ -91,9 +122,8 @@
                 }
             });
 
-            let socket;
             (function connect() {
-                socket = new WebSocket('ws://' + location.host + '/ws/status/history');
+                let socket = new WebSocket('ws://' + location.host + '/ws/status/history');
                 socket.onclose = connect;
                 socket.onmessage = msg => {
                     let data = JSON.parse(msg.data);
@@ -115,8 +145,7 @@
                                     )
                                 );
                             });
-                            __hoc.history.interval.limit();
-                            chart.update();
+                            __hoc.history.interval.update();
                             break;
                         case 'graph-update':
                             chart.data.datasets.all.forEach(it => {
@@ -124,8 +153,7 @@
                                     it.data.push(data.datapoint);
                                 }
                             });
-                            __hoc.history.interval.limit();
-                            chart.update();
+                            __hoc.history.interval.update();
                             break;
                     }
                 };
@@ -158,7 +186,7 @@
             let form = document.currentScript.parentElement;
 
             function limit() {
-                let interval = {
+                let interval = Object.assign(__hoc.history.interval, {
                     start: moment(
                         form['start-date'].value +
                         (form['start-time'].value ? 'T' + form['start-time'].value : '')
@@ -168,7 +196,7 @@
                         'T' +
                         (form['end-time'].value ? form['end-time'].value : '24:00')
                     )
-                };
+                });
 
                 let chart = __hoc.history.chart;
                 chart.data.datasets.forEach(it => it.data = []);
@@ -191,11 +219,14 @@
                                 .forEach(it => it.data.push(point));
                         });
                 });
+
+                return interval;
             }
 
             function update() {
-                limit();
+                let interval = limit();
                 __hoc.history.chart.update();
+                __hoc.history.statistics.update(interval);
             }
 
             form['start-date'].onchange = event => update();
@@ -204,9 +235,74 @@
             form['end-time'].onchange   = event => update();
 
             return {
-                limit: limit
+                update: update,
+                start: null, // unused
+                end: null // unused
             };
         })();
         </script>
     </form>
+
+    <table class="statistics" style="width: 50%; margin: auto;">
+        <tr>
+            <td class="statistic">
+                <h3>Revenue</h3>
+                <span data-statistic="revenue"></span>
+            </td>
+            <td class="statistic" rowspan="3">
+                <h3>Average Time</h3>
+                <table>
+                    {{#vehicleStates}}
+                    <tr>
+                        <th style="text-align: left;">{{.}}:</th>
+                        <td style="text-align: right;" data-statistic="time-{{.}}"></td>
+                    </tr>
+                    {{/vehicleStates}}
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td class="statistic">
+                <h3>Average Fee</h3>
+                <span data-statistic="fee-avg"></span>
+            </td>
+        </tr>
+        <tr>
+            <td class="statistic">
+                <h3>Average Price</h3>
+                <span data-statistic="price-avg"></span>
+            </td>
+        </tr>
+
+        <script>
+            __hoc.history.statistics = (() => {
+                let holders = document.currentScript.parentElement.querySelectorAll('[data-statistic]');
+
+                (function connect() {
+                    let socket = new WebSocket('ws://' + location.host + '/ws/statistics');
+                    socket.onclose = connect;
+                    socket.onmessage = msg => {
+                        let data = JSON.parse(msg.data);
+                        for (name in data) {
+                            holders.forEach(holder => {
+                                if (holder.dataset.statistic == name) {
+                                    holder.innerHTML = data[name];
+                                }
+                            });
+                        }
+                    };
+                    socket.onopen = () => {
+                        __hoc.history.statistics.update = interval => {
+                            socket.send(JSON.stringify(interval));
+                        };
+                        __hoc.history.interval.update();
+                    };
+                })();
+
+                return {
+                    update: () => {} // nop until socket opens
+                };
+            })();
+        </script>
+    </table>
 </article>

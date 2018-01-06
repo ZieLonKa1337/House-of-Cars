@@ -26,6 +26,11 @@ import java.util.function.Function;
     "WHERE t.time < :time" +
     " AND t.vehicle = :vehicle " +
     "ORDER BY t.time DESC")
+@NamedQuery(name = "VehicleTransition.next", query =
+    "SELECT t FROM VehicleTransition t " +
+    "WHERE t.time > :time" +
+    " AND t.vehicle = :vehicle " +
+    "ORDER BY t.time")
 public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
     public static TypedQuery<Transition> since(final ZonedDateTime time) {
         return Garage.instance().persistence.execute(em -> em
@@ -41,6 +46,12 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
 
     @Transient
     private transient Vehicle.State stateInstance;
+
+    @Transient
+    private transient BigDecimal price;
+
+    @Transient
+    private transient VehicleTransition pricedSince;
 
     /** @deprecated only for JPA */
     @Deprecated
@@ -73,7 +84,7 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
     }
 
     /** @return the associated vehicle's
-     * previous transition, if any */
+     *     previous transition, if any */
     public Optional<VehicleTransition> previous() {
         return Garage.instance().persistence.execute(em -> em
             .createNamedQuery("VehicleTransition.previous", VehicleTransition.class)
@@ -83,15 +94,31 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
             .getResultStream().findFirst());
     }
 
-    /** Sums the prices (fee with duration) of all transitions
-     * of this vehicle that have a fee, including the previous
-     * up to the first prior transition where a payment was
+    /** @return the associated vehicle's
+     *     next transition, if any */
+    public Optional<VehicleTransition> next() {
+        return Garage.instance().persistence.execute(em -> em
+            .createNamedQuery("VehicleTransition.next", VehicleTransition.class)
+            .setMaxResults(1)
+            .setParameter("time", time())
+            .setParameter("vehicle", vehicle)
+            .getResultStream().findFirst());
+    }
+
+    /** Sums the prices (fee * duration) of past
+     * transitions of this vehicle that have a fee,
+     * up to the first encountered where a payment was
      * completed (that is {@code paid = TRUE}).
      * @return the current price to pay (in order to settle)
-     *     or {@code null} if no current payment exists */
-    // XXX could this be done by a view or query?
+     *     or empty if no current payment exists */
+    // XXX could this be done by views or queries?
     public Optional<BigDecimal> price() {
+        // TODO adapt so that current price can be calculated while still parking (but don't break usages)
         if (data.paid == null) return Optional.empty();
+
+        if (price != null) {
+            return Optional.of(price);
+        }
 
         class EndHolder {
             /** time of the current next transition (to calculate duration) */
@@ -99,14 +126,13 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
         }
         final EndHolder end = new EndHolder();
 
-        final Function<VehicleTransition, BigDecimal> transitionPrice = it ->
-            it.data.fee.multiply(
-                BigDecimal.valueOf( // duration
-                    ((double) it.time().until(end.end, ChronoUnit.SECONDS))
-                    / 60 // minutes
-                    / 60 // hours, our base pricing unit
-                )
-            );
+        final Function<VehicleTransition, BigDecimal> transitionPrice = it -> it.data.fee.multiply(
+            BigDecimal.valueOf( // duration
+                ((double) it.time().until(end.end, ChronoUnit.SECONDS))
+                / 60 // minutes
+                / 60 // hours, our base pricing unit
+            )
+        );
 
         VehicleTransition it = previous().orElseThrow(() -> new AssertionError("no previous transition"));
 
@@ -130,6 +156,17 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
             end.end = it.time();
             it = it.previous().orElse(null);
         }
-        return Optional.of(price);
+
+        pricedSince = it;
+        return Optional.of(this.price = price);
+    }
+
+    /** All transitions in between (inclusive)
+     * are included in the {@link #price()}.
+     * @return the last transition included in
+     * the {@link #price()} calculation */
+    public Optional<VehicleTransition> pricedSince() {
+        price(); // ensure pricedSince is set
+        return Optional.ofNullable(pricedSince);
     }
 }

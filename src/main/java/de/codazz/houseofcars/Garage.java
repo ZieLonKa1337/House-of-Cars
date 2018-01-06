@@ -6,6 +6,7 @@ import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.History;
 import de.codazz.houseofcars.websocket.subprotocol.Monitor;
+import de.codazz.houseofcars.websocket.subprotocol.Statistics;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
 import de.codazz.houseofcars.websocket.subprotocol.VGate;
 import org.mindrot.jbcrypt.BCrypt;
@@ -91,6 +92,7 @@ public class Garage implements Runnable, Closeable {
         webSocket("/ws/status", Status.class);
         webSocket("/ws/status/history", History.class);
         webSocket("/ws/status/monitor", Monitor.class);
+        webSocket("/ws/statistics", Statistics.class);
         webSocket("/ws/gate", Gate.class);
         webSocket("/ws/vgate", VGate.class);
 
@@ -176,7 +178,11 @@ public class Garage implements Runnable, Closeable {
             return null;
         });
         get("/dashboard", new Route() {
-            final ModelAndView modelAndView = modelAndView(Monitor.templateDefaults, "dashboard.html.mustache");
+            final Map<String, Object> templateValues = new HashMap<>(History.templateDefaults.size() + Monitor.templateDefaults.size(), 1); {
+                templateValues.putAll(History.templateDefaults);
+                templateValues.putAll(Monitor.templateDefaults);
+            }
+            final ModelAndView modelAndView = modelAndView(templateValues, "dashboard.html.mustache");
 
             @Override
             public Object handle(final Request request, final Response response) {

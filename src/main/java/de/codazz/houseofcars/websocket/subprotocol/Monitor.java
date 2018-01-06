@@ -14,7 +14,6 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -22,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /** @author rstumm2s */
 @WebSocket
@@ -34,7 +32,7 @@ public class Monitor extends Broadcast {
     }
 
     public static List<VehicleStatus> states() {
-        Garage.instance().persistence.refresh(); // TODO move to newUpdate()?
+        Garage.instance().persistence.refresh(); // TODO remove? move to newUpdate()?
         return Garage.instance().persistence.execute(em -> em
             .createQuery("SELECT vs FROM vehicle_state vs ORDER BY vs.since DESC", VehicleStatus.class)
             .getResultList());

@@ -17,14 +17,21 @@ import java.time.chrono.ChronoZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 /** @author rstumm2s */
 @WebSocket
 public class History extends Broadcast {
-    private static final Logger log = LoggerFactory.getLogger(History.class);
+    public static final Map<String, Object> templateDefaults; static {
+        final Map<String, Object> map = new HashMap<>(1);
+        map.put("vehicleStates", Arrays.stream(Vehicle.State.values()).map(Enum::name).toArray(String[]::new));
+        templateDefaults = Collections.unmodifiableMap(map);
+    }
 
     private static volatile History instance; {
         if (instance != null) throw new IllegalStateException();
@@ -34,6 +41,8 @@ public class History extends Broadcast {
     public static void close() {
         instance = null;
     }
+
+    private static final Logger log = LoggerFactory.getLogger(History.class);
 
     private final Graph graph;
 
@@ -73,6 +82,7 @@ public class History extends Broadcast {
             }).stream()
                 .map(transition -> {
                     // update all states after every transition
+                    // TODO send only one message with all states
                     final GraphUpdate[] transitionUpdates = new GraphUpdate[Vehicle.State.values().length];
                     for (final Vehicle.State state : Vehicle.State.values()) {
                         transitionUpdates[state.ordinal()] = new GraphUpdate(state.name(), new Datapoint(
