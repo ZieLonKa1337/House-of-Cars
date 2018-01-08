@@ -87,7 +87,7 @@ public class Statistics {
             .set("fee-avg", ((Function<List<VehicleTransition>, String>) transitions -> transitions.isEmpty()
                 ? "n/a"
                 : transitions.stream()
-                    .map(it -> it.data().fee())
+                    .map(VehicleTransition::fee).map(Optional::get)
                     .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .divide(BigDecimal.valueOf(transitions.size()), RoundingMode.DOWN)
                         .setScale(2, RoundingMode.DOWN)
@@ -126,7 +126,7 @@ public class Statistics {
             }).apply(Garage.instance().persistence.execute(em -> {
                 final TypedQuery<VehicleTransition> query = em
                     .createQuery(qlString + " AND t.state = :state ", VehicleTransition.class)
-                    .setParameter("state", state.name());
+                    .setParameter("state", state);
                 setTimeParams.accept(query);
                 return query.getResultList();
             })));

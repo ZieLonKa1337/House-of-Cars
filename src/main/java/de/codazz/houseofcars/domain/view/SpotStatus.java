@@ -13,7 +13,7 @@ import java.util.Objects;
 
 /** @author rstumm2s */
 @Entity(name = "spot_state")
-final class SpotStatus {
+public final class SpotStatus {
     @EmbeddedId
     private PK $;
     @OneToOne

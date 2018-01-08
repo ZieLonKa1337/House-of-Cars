@@ -3,6 +3,8 @@ package de.codazz.houseofcars.domain;
 import de.codazz.houseofcars.Garage;
 
 import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.NamedQuery;
@@ -105,6 +107,7 @@ public class Spot extends Entity {
     private int id;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Type type;
 
     /** @deprecated only for JPA */

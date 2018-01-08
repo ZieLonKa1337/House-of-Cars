@@ -3,6 +3,7 @@ package de.codazz.houseofcars.business;
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
+import de.codazz.houseofcars.domain.VehicleTransition;
 import de.codazz.houseofcars.statemachine.EnumStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +114,9 @@ public class Gate extends EnumStateMachine<Gate.State, Void, Gate.Event> {
         final boolean permission =
             vehicle.state().state() == Vehicle.State.LookingForSpot ||
             vehicle.state().state() == Vehicle.State.Leaving &&
-                vehicle.lastTransition().data().paid();
+                vehicle.lastTransition()
+                    .flatMap(VehicleTransition::paid)
+                    .orElse(false);
         log.trace("leave permission for {}: {}", license, permission);
         return permission;
     }

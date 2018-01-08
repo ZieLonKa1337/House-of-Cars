@@ -6,6 +6,7 @@ import de.codazz.houseofcars.websocket.subprotocol.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.Column;
 import javax.persistence.ColumnResult;
 import javax.persistence.Embeddable;
 import javax.persistence.Id;
@@ -16,6 +17,7 @@ import javax.persistence.SqlResultSetMapping;
 import javax.persistence.Transient;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
@@ -121,12 +123,12 @@ public class Vehicle extends Entity {
         this.owner = owner;
     }
 
-    public VehicleTransition lastTransition() {
+    public Optional<VehicleTransition> lastTransition() {
         return Garage.instance().persistence.execute(em -> em
             .createNamedQuery("Vehicle.lastTransition", VehicleTransition.class)
             .setMaxResults(1)
             .setParameter("vehicle", this)
-            .getResultStream().findFirst().orElse(null));
+            .getResultStream().findFirst());
     }
 
     @Transient
@@ -134,7 +136,7 @@ public class Vehicle extends Entity {
 
     /** do not cache! may be a new instance */
     public Lifecycle state() {
-        return state(lastTransition());
+        return state(lastTransition().orElse(null));
     }
 
     /** restore to specified state
@@ -284,9 +286,12 @@ public class Vehicle extends Entity {
                 }
                 if (data.fee == null) { // could be restored
                     data.fee = Garage.instance().config.fee().get(data.spot.type());
-                    if (data.fee == null) {
-                        log.error("no fee configured for {} spots!", data.spot.type());
-                    }
+                }
+                if (data.reminder == null) { // could be restored
+                    data.reminder = Garage.instance().config.limit().reminder();
+                }
+                if (data.limit == null) { // could be restored
+                    data.limit = Garage.instance().config.limit().overdue();
                 }
             }
 
@@ -329,6 +334,8 @@ public class Vehicle extends Entity {
             data.recommendedSpot = null;
             data.fee = null;
             data.paid = null;
+            data.reminder = null;
+            data.limit = null;
             try {
                 return data;
             } finally {
@@ -352,13 +359,11 @@ public class Vehicle extends Entity {
             /** {@code null}: nothing to pay */
             Boolean paid;
 
-            public BigDecimal fee() {
-                return fee;
-            }
-
-            public Boolean paid() {
-                return paid;
-            }
+            @Column(columnDefinition = "interval")
+            Duration reminder;
+            /** a vehicle parking longer than this is overdue */
+            @Column(name = "\"limit\"", columnDefinition = "interval")
+            Duration limit;
 
             @Override
             public Data clone() {

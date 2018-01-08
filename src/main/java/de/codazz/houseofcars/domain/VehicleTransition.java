@@ -3,6 +3,8 @@ package de.codazz.houseofcars.domain;
 import de.codazz.houseofcars.Garage;
 
 import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
 import javax.persistence.PostLoad;
@@ -42,10 +44,8 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
     private Vehicle vehicle;
 
     @Column(nullable = false)
-    private String state;
-
-    @Transient
-    private transient Vehicle.State stateInstance;
+    @Enumerated(EnumType.STRING)
+    private Vehicle.State state;
 
     @Transient
     private transient BigDecimal price;
@@ -60,8 +60,7 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
     protected VehicleTransition(final Vehicle vehicle, final Vehicle.State state, final Vehicle.State.Data data) {
         super(data);
         this.vehicle = vehicle;
-        this.state = state.name();
-        stateInstance = state;
+        this.state = state;
     }
 
     @PostLoad
@@ -77,10 +76,7 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
 
     @Override
     public Vehicle.State state() {
-        if (stateInstance == null) {
-            stateInstance = Vehicle.State.valueOf(state);
-        }
-        return stateInstance;
+        return state;
     }
 
     /** @return the associated vehicle's
@@ -103,6 +99,14 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
             .setParameter("time", time())
             .setParameter("vehicle", vehicle)
             .getResultStream().findFirst());
+    }
+
+    public Optional<BigDecimal> fee() {
+        return Optional.ofNullable(data.fee);
+    }
+
+    public Optional<Boolean> paid() {
+        return Optional.ofNullable(data.paid);
     }
 
     /** Sums the prices (fee * duration) of past
@@ -168,5 +172,19 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
     public Optional<VehicleTransition> pricedSince() {
         price(); // ensure pricedSince is set
         return Optional.ofNullable(pricedSince);
+    }
+
+    /** @return whether the remind timer has expired, if any */
+    public Optional<Boolean> remind() {
+        return Optional.ofNullable(data.reminder)
+            .map(it -> time().plus(it)
+                .isBefore(ZonedDateTime.now()));
+    }
+
+    /** @return whether the limit timer has expired, if any */
+    public Optional<Boolean> overdue() {
+        return Optional.ofNullable(data.limit)
+            .map(it -> time().plus(it)
+                .isBefore(ZonedDateTime.now()));
     }
 }

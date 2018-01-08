@@ -10,8 +10,6 @@ import de.codazz.houseofcars.websocket.subprotocol.Statistics;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
 import de.codazz.houseofcars.websocket.subprotocol.VGate;
 import org.mindrot.jbcrypt.BCrypt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
@@ -38,8 +36,6 @@ public class Garage implements Runnable, Closeable {
     static {
         System.setProperty("java.security.auth.login.config", Garage.class.getClassLoader().getResource("jaas.conf").toString());
     }
-
-    private static final Logger log = LoggerFactory.getLogger(Garage.class);
 
     private static final String CONFIG_FILE = "house-of-cars.json";
 

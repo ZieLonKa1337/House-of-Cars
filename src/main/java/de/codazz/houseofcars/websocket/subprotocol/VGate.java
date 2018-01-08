@@ -3,6 +3,7 @@ package de.codazz.houseofcars.websocket.subprotocol;
 import com.esotericsoftware.jsonbeans.JsonValue;
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Vehicle;
+import de.codazz.houseofcars.domain.VehicleTransition;
 import de.codazz.houseofcars.websocket.Message;
 import de.codazz.houseofcars.websocket.TypedMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
@@ -53,7 +54,9 @@ public class VGate extends Gate {
                         ? vehicle.state().state().name()
                         : Vehicle.State.Away.name();
                     final Boolean paid = vehicle == null ? null
-                        : vehicle.lastTransition().data().paid();
+                        : vehicle.lastTransition()
+                            .flatMap(VehicleTransition::paid)
+                            .orElse(null);
                 };
             }
         }

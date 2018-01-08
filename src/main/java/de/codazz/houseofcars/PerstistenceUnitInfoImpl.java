@@ -1,5 +1,13 @@
 package de.codazz.houseofcars;
 
+import de.codazz.hibernate.type.Interval;
+import de.codazz.houseofcars.domain.Customer;
+import de.codazz.houseofcars.domain.Spot;
+import de.codazz.houseofcars.domain.Vehicle;
+import de.codazz.houseofcars.domain.VehicleTransition;
+import de.codazz.houseofcars.domain.view.SpotStatus;
+import de.codazz.houseofcars.domain.view.VehicleStatus;
+
 import javax.persistence.SharedCacheMode;
 import javax.persistence.ValidationMode;
 import javax.persistence.spi.ClassTransformer;
@@ -10,7 +18,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -77,12 +84,13 @@ public class PerstistenceUnitInfoImpl implements PersistenceUnitInfo {
     @Override
     public List<String> getManagedClassNames() {
         final List<String> classes = new ArrayList<>();
-        classes.add("de.codazz.houseofcars.domain.Customer");
-        classes.add("de.codazz.houseofcars.domain.Spot");
-        classes.add("de.codazz.houseofcars.domain.Vehicle");
-        classes.add("de.codazz.houseofcars.domain.VehicleTransition");
-        classes.add("de.codazz.houseofcars.domain.view.SpotStatus");
-        classes.add("de.codazz.houseofcars.domain.view.VehicleStatus");
+        classes.add(Customer.class.getCanonicalName());
+        classes.add(Spot.class.getCanonicalName());
+        classes.add(Vehicle.class.getCanonicalName());
+        classes.add(VehicleTransition.class.getCanonicalName());
+        classes.add(SpotStatus.class.getCanonicalName());
+        classes.add(VehicleStatus.class.getCanonicalName());
+        classes.add(DurationPersistenceConverter.class.getCanonicalName());
         return Collections.unmodifiableList(classes);
     }
 

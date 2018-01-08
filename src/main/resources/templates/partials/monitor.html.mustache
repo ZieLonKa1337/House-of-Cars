@@ -56,12 +56,21 @@
                         })
                         .sort((a, b) => a.paid > b.paid)
                         .forEach(it => {
-                            listHTML += '<li draggable="true" ondragstart="__hoc.monitor.dnd.dragstart(event);" ';
+                            listHTML += '<li draggable="true" ';
+                            listHTML += 'ondragstart="__hoc.monitor.dnd.dragstart(event);" ';
                             listHTML += 'data-vehicle="';
                             listHTML += it.vehicle_license;
                             listHTML += '" data-state="';
                             listHTML += it.state
-                            listHTML += '">';
+                            listHTML += '" ';
+                            if (it.overdue) {
+                                listHTML += 'title="Overdue" ';
+                                listHTML += 'style="color: red;"';
+                            } else if (it.remind) {
+                                listHTML += 'title="Reminder expired" ';
+                                listHTML += 'style="color: orange;"';
+                            }
+                            listHTML += '/>';
                             listHTML += it.vehicle_license;
                             if (it.paid != null) {
                                 listHTML += ' (';

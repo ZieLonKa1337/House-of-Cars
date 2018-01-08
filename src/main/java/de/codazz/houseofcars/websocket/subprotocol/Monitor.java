@@ -115,7 +115,10 @@ public class Monitor extends Broadcast {
             state,
             since,
             price;
-        public final Boolean paid;
+        public final Boolean
+            paid,
+            remind,
+            overdue;
 
         public VehicleStateMessage(final VehicleStatus it) {
             vehicle_license = it.vehicle().license();
@@ -125,16 +128,20 @@ public class Monitor extends Broadcast {
                 .map(since -> since.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
                 .orElse(null);
 
-            final VehicleTransition transition = it.vehicle().lastTransition();
+            final VehicleTransition transition = it.vehicle().lastTransition().orElse(null);
             if (transition != null) {
-                paid = transition.data().paid();
+                paid = transition.paid().orElse(null);
                 price = transition.price()
-                    // TODO configurable scale
+                    // TODO configurable scale or scale on client
                     .map(p -> p.setScale(2, RoundingMode.DOWN).toPlainString())
                     .orElse(null);
+                remind = transition.remind().orElse(null);
+                overdue = transition.overdue().orElse(null);
             } else {
                 paid = null;
                 price = null;
+                remind = null;
+                overdue = null;
             }
         }
     }

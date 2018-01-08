@@ -19,9 +19,11 @@ public class JsonConfig extends AbstractConfig {
     }
 
     public JsonConfig() {
+        // TODO make JsonConfig generic - move defaults somewhere else
         super(
             80,
             "jdbc:postgresql://localhost:5432/houseofcars", "houseofcars", null,
+            null,
             null
         );
     }

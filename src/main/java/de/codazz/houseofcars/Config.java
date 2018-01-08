@@ -3,6 +3,7 @@ package de.codazz.houseofcars;
 import de.codazz.houseofcars.domain.Spot;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,6 +14,7 @@ public interface Config {
     String jdbcUser();
     String jdbcPassword();
     Map<Spot.Type, BigDecimal> fee();
+    Limit limit();
 
     /** @param other the instance to merge into this instance
      * @param preserveOther if {@code true}, entries from
@@ -24,6 +26,7 @@ public interface Config {
         int port;
         String jdbcUrl, jdbcUser, jdbcPassword;
         final Map<Spot.Type, BigDecimal> fee = new HashMap<>();
+        Duration limitReminder, limitOverdue;
 
         final Config innerOther;
         if (preserveOther) {
@@ -33,6 +36,8 @@ public interface Config {
             jdbcPassword = other.jdbcPassword();
             fee.putAll(fee());
             fee.putAll(other.fee());
+            limitReminder = other.limit().reminder();
+            limitOverdue = other.limit().overdue();
             innerOther = this;
         } else {
             port = port();
@@ -41,6 +46,8 @@ public interface Config {
             jdbcPassword = jdbcPassword();
             fee.putAll(other.fee());
             fee.putAll(fee());
+            limitReminder = limit().reminder();
+            limitOverdue = limit().overdue();
             innerOther = other;
         }
         if (port == 0) port = innerOther.port();
@@ -48,7 +55,18 @@ public interface Config {
         if (jdbcUser == null) jdbcUser = innerOther.jdbcUser();
         if (jdbcPassword == null) jdbcPassword = innerOther.jdbcPassword();
         // fee already merged
+        if (limitReminder == null) limitReminder = innerOther.limit().reminder();
+        if (limitOverdue == null) limitOverdue = innerOther.limit().overdue();
 
-        return new AbstractConfig(port, jdbcUrl, jdbcUser, jdbcPassword, fee);
+        return new AbstractConfig(
+            port,
+            jdbcUrl, jdbcUser, jdbcPassword,
+            fee,
+            new AbstractConfig.AbstractLimit(limitReminder, limitOverdue));
+    }
+
+    interface Limit {
+        Duration reminder();
+        Duration overdue();
     }
 }

@@ -10,7 +10,7 @@ create table Customer (
 create table Spot (
 	id int4 not null,
 	OPTLOCK int8 not null,
-	type int4 not null,
+	type varchar(255) not null,
 	primary key (id)
 );
 
@@ -25,7 +25,9 @@ create table VehicleTransition (
 	time timestamptz not null,
 	OPTLOCK int8 not null,
 	fee numeric(16, 8), -- big enough for Bitcoin
+	"limit" varchar, -- iso_8601 interval
 	paid boolean,
+	reminder varchar, -- iso_8601 interval
 	state varchar(255) not null,
 	recommendedSpot_id int4,
 	spot_id int4,
