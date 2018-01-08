@@ -4,6 +4,7 @@ import com.esotericsoftware.jsonbeans.JsonValue;
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.websocket.Message;
+import de.codazz.houseofcars.websocket.TypedMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +41,25 @@ public class VGate extends Gate {
                     }
                 }, delay);
             } break;
+            case "get-state": {
+                assert response == null;
+                final String _license = msg.getString("license");
+                final Vehicle vehicle = Garage.instance().persistence.execute(em ->
+                    em.find(Vehicle.class, _license)
+                );
+                return new TypedMessage("get-state") {
+                    final String license = _license;
+                    final String state = vehicle != null
+                        ? vehicle.state().state().name()
+                        : Vehicle.State.Away.name();
+                    final Boolean paid = vehicle == null ? null
+                        : vehicle.lastTransition().data().paid();
+                };
+            }
         }
 
         return response;
     }
+
+
 }

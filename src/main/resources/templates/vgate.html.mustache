@@ -29,17 +29,34 @@
         window.__hoc = {};
     }
     __hoc.vgate = (() => {
-        let licenseReader = document.getElementById('license-reader');
-        let gate = document.getElementById('gate');
-
-        let socket;
         (function connect() {
-            socket = new WebSocket('ws://' + location.host + '/ws/vgate');
+            let socket = new WebSocket('ws://' + location.host + '/ws/vgate');
             socket.onclose = connect;
+            socket.onopen = () => {
+                __hoc.vgate.requestEnter = license => {
+                    socket.send(JSON.stringify({
+                        type: 'enter-request',
+                        license: license
+                    }));
+                };
+                __hoc.vgate.requestLeave = license => {
+                    socket.send(JSON.stringify({
+                        type: 'leave-request',
+                        license: license
+                    }));
+                };
+                __hoc.vgate.updateReaderButtons = license => {
+                    socket.send(JSON.stringify({
+                        type: 'get-state',
+                        license: license
+                    }));
+                };
+            };
+
             socket.onmessage = msg => {
                 let data = JSON.parse(msg.data);
                 switch (data.type) {
-                    case 'open-response':
+                    case 'enter-response':
                         if (!data.permission) return;
                         state(true, data.recommendedSpot);
                         socket.send(JSON.stringify({
@@ -52,33 +69,72 @@
                             socket.send(JSON.stringify({
                                 type: 'entered',
                                 recommendedSpot: data.recommendedSpot,
-                                license: __hoc.vgate.requestOpen.license
+                                license: data.license
                             }));
+                            __hoc.vgate.updateReaderButtons(data.license);
                         }, 1000 + Math.random() * 2000);
+                        break;
+                    case 'leave-response':
+                        if (!data.permission) return;
+                        state(true);
+                        socket.send(JSON.stringify({
+                            type: 'opened'
+                        }));
+
+                        // simulate vehicle driving out
+                        setTimeout(() => {
+                            state(false);
+                            socket.send(JSON.stringify({
+                                type: 'left',
+                                license: data.license
+                            }));
+                            __hoc.vgate.updateReaderButtons(data.license);
+                        }, 1000 + Math.random() * 1000);
+                        break;
+                    case 'get-state':
+                        let form = document.getElementById('license-reader');
+                        if (data.license != form.license.value) return;
+                        switch (data.state) {
+                            case 'Away':
+                                form.enter.hidden = false;
+                                form.enter.disabled = false;
+                                form.leave.hidden = true;
+                                break;
+                            case 'Leaving':
+                                form.enter.hidden = true;
+                                form.leave.hidden = false;
+                                form.leave.disabled = !data.paid;
+                                break;
+                            default:
+                                form.enter.disabled = true;
+                                break;
+                        }
                         break;
                 }
             };
         })();
 
-        function state(open, recommendedSpot) {
+        function state(open, recommendedSpot = null) {
             let state = open ? 'open' : 'closed';
             document.getElementById('gate').src = 'gate-' + state + '.svg';
             document.getElementById('license-reader').hidden = open;
 
             let recommendedSpotElement = document.getElementById('recommended-spot');
-            recommendedSpotElement.hidden = !open;
-            recommendedSpotElement.getElementsByTagName('h2')[0].innerHTML = recommendedSpot;
+            if (recommendedSpot) {
+                recommendedSpotElement.hidden = false;
+                recommendedSpotElement.getElementsByTagName('h2')[0].innerHTML = recommendedSpot;
+            } else {
+                recommendedSpotElement.hidden = true;
+            }
         }
 
         return {
             state: state,
-            requestOpen: license => {
-                __hoc.vgate.requestOpen.license = license;
-                socket.send(JSON.stringify({ // XXX is socket var updated in connect()?
-                    type: 'open-request',
-                    license: license
-                }));
-            }
+
+            // nop until socket opens
+            requestEnter: () => {},
+            requestLeave: () => {},
+            updateReaderButtons: () => {}
         };
     })();
     </script>
@@ -89,8 +145,12 @@
 <img id="gate" src="gate-closed.svg"/>
 
 <form id="license-reader" action="javascript:void(0);">
-    <input name="license" type="text"/>
-    <button onclick="__hoc.vgate.requestOpen(document.getElementById('license-reader').license.value);">Enter</button>
+    <!-- FIXME event for auto-filled value on page load -->
+    <input name="license" type="text" autofocus="" required=""
+        onfocus="__hoc.vgate.updateReaderButtons(value);"
+        onkeyup="__hoc.vgate.updateReaderButtons(value);"/>
+    <button name="enter" onclick="__hoc.vgate.requestEnter(form.license.value);">Enter</button>
+    <button name="leave" onclick="__hoc.vgate.requestLeave(form.license.value);" hidden="">Leave</button>
 </form>
 
 <section id="recommended-spot">

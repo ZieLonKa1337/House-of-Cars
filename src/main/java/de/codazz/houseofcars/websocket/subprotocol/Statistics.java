@@ -65,22 +65,25 @@ public class Statistics {
             }
         };
 
-        final List<VehicleTransition> paidTransitions = Garage.instance().persistence.execute(em -> {
+        final List<VehicleTransition> unpaidTransitions = Garage.instance().persistence.execute(em -> {
             final TypedQuery<VehicleTransition> query =
-                em.createQuery(qlString + " AND t.data.paid = TRUE", VehicleTransition.class);
+                em.createQuery(qlString + " AND t.data.paid = FALSE", VehicleTransition.class);
             setTimeParams.accept(query);
             return query.getResultList();
         });
 
-        final BigDecimal revenue = paidTransitions.stream() // sum prices
-            .map(VehicleTransition::price).filter(Optional::isPresent).map(Optional::get)
-            .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.DOWN);
-
         final JsonWriter jw = new JsonWriter(new StringWriter());
         jw.setOutputType(OutputType.json);
         jw.object()
-            .set("revenue", revenue)
+            .set("revenue", Garage.instance().persistence.execute(em -> {
+                final TypedQuery<VehicleTransition> query =
+                        em.createQuery(qlString + " AND t.data.paid = TRUE", VehicleTransition.class);
+                setTimeParams.accept(query);
+                return query.getResultList();
+            }).stream() // sum prices
+                .map(VehicleTransition::price).filter(Optional::isPresent).map(Optional::get)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .setScale(2, RoundingMode.DOWN))
             .set("fee-avg", ((Function<List<VehicleTransition>, String>) transitions -> transitions.isEmpty()
                 ? "n/a"
                 : transitions.stream()
@@ -95,11 +98,14 @@ public class Statistics {
                 setTimeParams.accept(query);
                 return query.getResultList();
             })))
-            .set("price-avg", paidTransitions.isEmpty()
+            .set("price-avg", unpaidTransitions.isEmpty()
                 ? "n/a"
-                : revenue
-                    .divide(BigDecimal.valueOf(paidTransitions.size()), RoundingMode.DOWN)
-                    .toPlainString());
+                : unpaidTransitions.stream()
+                    .map(VehicleTransition::price).filter(Optional::isPresent).map(Optional::get)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .divide(BigDecimal.valueOf(unpaidTransitions.size()), RoundingMode.DOWN)
+                        .setScale(2,  RoundingMode.DOWN)
+                        .toPlainString());
         for (final Vehicle.State state : Vehicle.State.values()) {
             jw.set("time-" + state.name(), ((Function<List<VehicleTransition>, String>) transitions -> {
                 if (transitions.isEmpty()) return "n/a";

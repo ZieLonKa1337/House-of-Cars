@@ -40,6 +40,12 @@ public class Gate extends EnumStateMachine<Gate.State, Void, Gate.Event> {
 
                 return Closed;
             }
+
+            State on(final LeftEvent event) {
+                Garage.instance().persistence.execute(em -> em.find(Vehicle.class, event.license))
+                    .state().new LeaveEvent().fire();
+                return Closed;
+            }
         }
     }
 
@@ -76,15 +82,39 @@ public class Gate extends EnumStateMachine<Gate.State, Void, Gate.Event> {
         }
     }
 
+    /** a vehicle left the garage
+     * and the gate has closed again */
+    public class LeftEvent extends GateEvent {
+        public final String license;
+
+        public LeftEvent(final String license) {
+            super(State.Open);
+            this.license = license;
+        }
+    }
+
     /** the gate sees a vehicle's license
      * and asks whether it is allowed in */
-    public boolean requestOpen(final String license) {
+    public boolean requestEnter(final String license) {
         final boolean permission = Spot.countFree() != 0 &&
              Garage.instance().persistence.execute(em -> em
                 .createNamedQuery("Vehicle.mayEnter", Boolean.class)
                 .setParameter("license", license)
                 .getSingleResult());
-        log.trace("permission for {}: {}", license, permission);
+        log.trace("enter permission for {}: {}", license, permission);
+        return permission;
+    }
+
+    /** the gate sees a vehicle's license
+     * and asks whether it is allowed out */
+    public boolean requestLeave(final String license) {
+        final Vehicle vehicle = Garage.instance().persistence.execute(em -> em.find(Vehicle.class, license));
+        if (vehicle == null) return false;
+        final boolean permission =
+            vehicle.state().state() == Vehicle.State.LookingForSpot ||
+            vehicle.state().state() == Vehicle.State.Leaving &&
+                vehicle.lastTransition().data().paid();
+        log.trace("leave permission for {}: {}", license, permission);
         return permission;
     }
 }

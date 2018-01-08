@@ -50,27 +50,61 @@ public class Gate {
 
     protected Message handle(final JsonValue msg, final de.codazz.houseofcars.business.Gate state) {
         switch (msg.getString("type")) {
-            case "open-request":
-                return new OpenResponse(state.requestOpen(msg.getString("license")), Spot.anyFree().map(Spot::id).orElse(-1));
+            case "enter-request": {
+                final String license = msg.getString("license");
+                return new EnterResponse(
+                    license,
+                    state.requestEnter(license),
+                    Spot.anyFree().map(Spot::id).orElse(-1)
+                );
+            }
+            case "leave-request": {
+                final String license = msg.getString("license");
+                return new LeaveResponse(
+                    license,
+                    state.requestLeave(license)
+                );
+            }
             case "opened":
                 state.new OpenedEvent().fire();
                 return null;
             case "entered":
-                state.new EnteredEvent(msg.getString("license"), msg.getInt("recommendedSpot")).fire();
+                state.new EnteredEvent(
+                    msg.getString("license"),
+                    msg.getInt("recommendedSpot")
+                ).fire();
+                return null;
+            case "left":
+                state.new LeftEvent(
+                    msg.getString("license")
+                ).fire();
                 return null;
             default:
                 return null;
         }
     }
 
-    private class OpenResponse extends TypedMessage {
+    private class EnterResponse extends TypedMessage {
+        final String license;
         final boolean permission;
         final int recommendedSpot;
 
-        public OpenResponse(final boolean permission, final int recommendedSpot) {
-            super("open-response");
+        public EnterResponse(final String license, final boolean permission, final int recommendedSpot) {
+            super("enter-response");
+            this.license = license;
             this.permission = permission;
             this.recommendedSpot = recommendedSpot;
+        }
+    }
+
+    private class LeaveResponse extends TypedMessage {
+        final String license;
+        final boolean permission;
+
+        public LeaveResponse(final String license, final boolean permission) {
+            super("leave-response");
+            this.license = license;
+            this.permission = permission;
         }
     }
 }
