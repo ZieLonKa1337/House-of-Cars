@@ -1,8 +1,10 @@
 package de.codazz.houseofcars.domain;
 
 import de.codazz.houseofcars.Garage;
+import de.codazz.houseofcars.VehicleTransitionListener;
 
 import javax.persistence.Column;
+import javax.persistence.EntityListeners;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
@@ -11,10 +13,8 @@ import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -33,6 +33,7 @@ import java.util.function.Function;
     "WHERE t.time > :time" +
     " AND t.vehicle = :vehicle " +
     "ORDER BY t.time")
+@EntityListeners(VehicleTransitionListener.class)
 public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
     public static TypedQuery<Transition> since(final ZonedDateTime time) {
         return Garage.instance().persistence.execute(em -> em
@@ -174,17 +175,15 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
         return Optional.ofNullable(pricedSince);
     }
 
-    /** @return whether the remind timer has expired, if any */
-    public Optional<Boolean> remind() {
+    /** @return when the reminder timer expires, if any */
+    public Optional<ZonedDateTime> reminder() {
         return Optional.ofNullable(data.reminder)
-            .map(it -> time().plus(it)
-                .isBefore(ZonedDateTime.now()));
+            .map(it -> time().plus(it));
     }
 
-    /** @return whether the limit timer has expired, if any */
-    public Optional<Boolean> overdue() {
+    /** @return when the limit timer expires, if any */
+    public Optional<ZonedDateTime> overdue() {
         return Optional.ofNullable(data.limit)
-            .map(it -> time().plus(it)
-                .isBefore(ZonedDateTime.now()));
+            .map(it -> time().plus(it));
     }
 }

@@ -109,6 +109,7 @@ public class Persistence implements Closeable {
     @Override
     public void close() {
         executor.shutdown();
+        entityManager.getEntityManagerFactory().close();
         entityManager.close();
     }
 }

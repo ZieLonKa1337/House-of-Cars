@@ -1,6 +1,5 @@
 package de.codazz.houseofcars;
 
-import de.codazz.hibernate.type.Interval;
 import de.codazz.houseofcars.domain.Customer;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;

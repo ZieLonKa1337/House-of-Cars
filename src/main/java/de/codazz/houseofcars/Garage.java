@@ -49,6 +49,7 @@ public class Garage implements Runnable, Closeable {
     }
 
     public final Persistence persistence;
+    public final de.codazz.houseofcars.business.Monitor monitor;
 
     public final Config config;
 
@@ -76,6 +77,8 @@ public class Garage implements Runnable, Closeable {
                 throw new IllegalStateException("no fee configured for " + type + "spots!");
             }
         }
+
+        monitor = new de.codazz.houseofcars.business.Monitor();
     }
 
     @Override
@@ -193,6 +196,8 @@ public class Garage implements Runnable, Closeable {
                 return templateEngine.render(modelAndView);
             }
         });
+
+        monitor.run();
     }
 
     @Override
@@ -206,6 +211,7 @@ public class Garage implements Runnable, Closeable {
             Monitor.close();
         }
         persistence.close();
+        monitor.close();
 
         if (instance == this) {
             instance = null;
