@@ -17,15 +17,15 @@
     <table class="monitor">
         <tr>
             {{#vehicleStates}}
-                <th>{{.}}</th>
+            <th>{{.}}</th>
             {{/vehicleStates}}
         </tr>
         <tr>
             {{#vehicleStates}}
-                <td data-state="{{.}}"
-                    ondragover="__hoc.monitor.dnd.dragover(event);"
-                    ondrop="__hoc.monitor.dnd.drop(event);">
-                </td>
+            <td data-state="{{.}}"
+                ondragover="__hoc.monitor.dnd.dragover(event);"
+                ondrop="__hoc.monitor.dnd.drop(event);">
+            </td>
             {{/vehicleStates}}
         </tr>
     </table>

@@ -13,6 +13,7 @@ import java.util.Objects;
 public class AbstractConfig implements Config {
     protected int port;
     protected String jdbcUrl, jdbcUser, jdbcPassword;
+    protected AbstractCurrency currency;
     // TODO serialize properly in JsonConfig so we we can directly hold _fee
     protected HashMap<String, String> fee;
     protected transient Map<Spot.Type, BigDecimal> _fee;
@@ -26,6 +27,7 @@ public class AbstractConfig implements Config {
     public AbstractConfig(
         final int port,
         final String jdbcUrl, final String jdbcUser, final String jdbcPassword,
+        final Currency currency,
         final Map<Spot.Type, BigDecimal> fee,
         final Limit limit
     ) {
@@ -33,6 +35,11 @@ public class AbstractConfig implements Config {
         this.jdbcUrl = jdbcUrl;
         this.jdbcUser = jdbcUser;
         this.jdbcPassword = jdbcPassword;
+        this.currency = currency instanceof AbstractCurrency
+            ? (AbstractCurrency) currency
+            : currency == null
+                ? new AbstractCurrency()
+                : new AbstractCurrency(currency);
         this.fee = new HashMap<>(Spot.Type.values().length, 1);
         if ((_fee = fee) != null) {
             fee.forEach((key, value) -> this.fee.put(key.name(), value.toPlainString()));
@@ -62,6 +69,11 @@ public class AbstractConfig implements Config {
     @Override
     public String jdbcPassword() {
         return jdbcPassword;
+    }
+
+    @Override
+    public Currency currency() {
+        return currency;
     }
 
     @Override
@@ -131,8 +143,46 @@ public class AbstractConfig implements Config {
             if (this == o) return true;
             if (!(o instanceof AbstractLimit)) return false;
             final AbstractLimit that = (AbstractLimit) o;
-            return Objects.equals(reminder(), that.reminder()) &&
-                Objects.equals(overdue(), that.overdue());
+            return Objects.equals(reminder, that.reminder) &&
+                Objects.equals(overdue, that.overdue);
+        }
+    }
+
+    public static class AbstractCurrency implements Currency {
+        private String name;
+        private Integer scale;
+
+        /** uninitialized */
+        protected AbstractCurrency() {}
+
+        /** copy constructor */
+        public AbstractCurrency(final Currency currency) {
+            name = currency.name();
+            scale = currency.scale();
+        }
+
+        public AbstractCurrency(final String name, final Integer scale) {
+            this.name = name;
+            this.scale = scale;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public Integer scale() {
+            return scale;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (!(o instanceof AbstractCurrency)) return false;
+            final AbstractCurrency that = (AbstractCurrency) o;
+            return Objects.equals(name, that.name) &&
+                Objects.equals(scale, that.scale);
         }
     }
 }

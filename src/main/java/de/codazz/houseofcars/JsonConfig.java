@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
 
 /** @author rstumm2s */
 public class JsonConfig extends AbstractConfig {
@@ -23,6 +22,7 @@ public class JsonConfig extends AbstractConfig {
         super(
             80,
             "jdbc:postgresql://localhost:5432/houseofcars", "houseofcars", null,
+            null,
             null,
             null
         );

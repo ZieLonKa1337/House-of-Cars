@@ -22,6 +22,22 @@
     img.button {
         height: 3em;
     }
+
+    table.vehicles {
+        border-collapse: collapse;
+
+        width: 80%;
+        margin: auto;
+    }
+
+    table.vehicles th,
+    table.vehicles td {
+        border: 1px solid;
+    }
+
+    table .spacer {
+        border: none !important;
+    }
     </style>
 </head>
 <body>
@@ -44,12 +60,28 @@
 </a>
 
 <h2>My Vehicles</h2>
-<!-- TODO display vehicle status and timers -->
-<ul>
-    {{#session.customer.vehicles}}
-    <li>{{license}}</li>
-    {{/session.customer.vehicles}}
-</ul>
+<table class="vehicles">
+    <thead>
+        <tr>
+            <th class="spacer"></th>
+            <th>State</th>
+            <th>Duration</th>
+            <th>Price</th>
+            <th>Limit</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#session.customer.vehicles}}
+        <tr>
+            <th>{{license}}</th>
+            <td>{{lastTransition.state}}</td>
+            <td>{{lastTransition.duration}}</td>
+            <td {{^lastTransition.billPrice}}class="spacer"{{/lastTransition.billPrice}}>{{lastTransition.billPrice}}</td>
+            <td {{^lastTransition.overdue}}class="spacer"{{/lastTransition.overdue}}>{{lastTransition.overdue}}</td>
+        </tr>
+        {{/session.customer.vehicles}}
+    </tbody>
+</table>
 {{/session}}
 </body>
 </html>

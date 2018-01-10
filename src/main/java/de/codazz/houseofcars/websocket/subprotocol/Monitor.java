@@ -14,7 +14,6 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 import java.io.IOException;
-import java.math.RoundingMode;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -132,10 +131,7 @@ public class Monitor extends Broadcast {
             final VehicleTransition transition = it.vehicle().lastTransition().orElse(null);
             if (transition != null) {
                 paid = transition.paid().orElse(null);
-                price = transition.price()
-                    // TODO configurable scale or scale on client
-                    .map(p -> p.setScale(2, RoundingMode.DOWN).toPlainString())
-                    .orElse(null);
+                price = transition.billPrice().orElse(null);
                 if (transition.vehicle().owner().isPresent()) {
                     reminded = transition.reminder()
                         .map(limit -> limit.isBefore(ZonedDateTime.now()))

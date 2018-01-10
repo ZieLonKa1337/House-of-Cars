@@ -13,6 +13,7 @@ public interface Config {
     String jdbcUrl();
     String jdbcUser();
     String jdbcPassword();
+    Currency currency();
     Map<Spot.Type, BigDecimal> fee();
     Limit limit();
 
@@ -25,6 +26,7 @@ public interface Config {
 
         int port;
         String jdbcUrl, jdbcUser, jdbcPassword;
+        String currencyName; Integer currencyScale;
         final Map<Spot.Type, BigDecimal> fee = new HashMap<>();
         Duration limitReminder, limitOverdue;
 
@@ -34,6 +36,8 @@ public interface Config {
             jdbcUrl = other.jdbcUrl();
             jdbcUser = other.jdbcUser();
             jdbcPassword = other.jdbcPassword();
+            currencyName = other.currency().name();
+            currencyScale = other.currency().scale();
             fee.putAll(fee());
             fee.putAll(other.fee());
             limitReminder = other.limit().reminder();
@@ -44,6 +48,8 @@ public interface Config {
             jdbcUrl = jdbcUrl();
             jdbcUser = jdbcUser();
             jdbcPassword = jdbcPassword();
+            currencyName = currency().name();
+            currencyScale = currency().scale();
             fee.putAll(other.fee());
             fee.putAll(fee());
             limitReminder = limit().reminder();
@@ -54,6 +60,8 @@ public interface Config {
         if (jdbcUrl == null) jdbcUrl = innerOther.jdbcUrl();
         if (jdbcUser == null) jdbcUser = innerOther.jdbcUser();
         if (jdbcPassword == null) jdbcPassword = innerOther.jdbcPassword();
+        if (currencyName == null) currencyName = innerOther.currency().name();
+        if (currencyScale == null) currencyScale = innerOther.currency().scale();
         // fee already merged
         if (limitReminder == null) limitReminder = innerOther.limit().reminder();
         if (limitOverdue == null) limitOverdue = innerOther.limit().overdue();
@@ -61,6 +69,7 @@ public interface Config {
         return new AbstractConfig(
             port,
             jdbcUrl, jdbcUser, jdbcPassword,
+            new AbstractConfig.AbstractCurrency(currencyName, currencyScale),
             fee,
             new AbstractConfig.AbstractLimit(limitReminder, limitOverdue));
     }
@@ -68,5 +77,10 @@ public interface Config {
     interface Limit {
         Duration reminder();
         Duration overdue();
+    }
+
+    interface Currency {
+        String name();
+        Integer scale();
     }
 }

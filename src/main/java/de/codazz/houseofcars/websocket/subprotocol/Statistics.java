@@ -4,6 +4,7 @@ import com.esotericsoftware.jsonbeans.JsonReader;
 import com.esotericsoftware.jsonbeans.JsonValue;
 import com.esotericsoftware.jsonbeans.JsonWriter;
 import com.esotericsoftware.jsonbeans.OutputType;
+import de.codazz.houseofcars.Config;
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.domain.VehicleTransition;
@@ -72,6 +73,8 @@ public class Statistics {
             return query.getResultList();
         });
 
+        final Config.Currency currency = Garage.instance().config.currency();
+
         final JsonWriter jw = new JsonWriter(new StringWriter());
         jw.setOutputType(OutputType.json);
         jw.object()
@@ -83,15 +86,18 @@ public class Statistics {
             }).stream() // sum prices
                 .map(VehicleTransition::price).filter(Optional::isPresent).map(Optional::get)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .setScale(2, RoundingMode.DOWN))
+                    .setScale(currency.scale(), RoundingMode.DOWN)
+                    .toPlainString() +
+                        currency.name())
             .set("fee-avg", ((Function<List<VehicleTransition>, String>) transitions -> transitions.isEmpty()
                 ? "n/a"
                 : transitions.stream()
                     .map(VehicleTransition::fee).map(Optional::get)
                     .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .divide(BigDecimal.valueOf(transitions.size()), RoundingMode.DOWN)
-                        .setScale(2, RoundingMode.DOWN)
-                        .toPlainString()
+                        .setScale(currency.scale(), RoundingMode.DOWN)
+                        .toPlainString() +
+                            currency.name()
             ).apply(Garage.instance().persistence.execute(em -> {
                 final TypedQuery<VehicleTransition> query =
                     em.createQuery(qlString + " AND t.data.fee IS NOT NULL", VehicleTransition.class);
@@ -104,8 +110,9 @@ public class Statistics {
                     .map(VehicleTransition::price).filter(Optional::isPresent).map(Optional::get)
                     .reduce(BigDecimal.ZERO, BigDecimal::add)
                         .divide(BigDecimal.valueOf(unpaidTransitions.size()), RoundingMode.DOWN)
-                        .setScale(2,  RoundingMode.DOWN)
-                        .toPlainString());
+                        .setScale(currency.scale(),  RoundingMode.DOWN)
+                        .toPlainString() +
+                            currency.name());
         for (final Vehicle.State state : Vehicle.State.values()) {
             jw.set("time-" + state.name(), ((Function<List<VehicleTransition>, String>) transitions -> {
                 if (transitions.isEmpty()) return "n/a";

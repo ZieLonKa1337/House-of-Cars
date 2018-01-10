@@ -1,5 +1,6 @@
 package de.codazz.houseofcars.domain;
 
+import de.codazz.houseofcars.Config;
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.VehicleTransitionListener;
 
@@ -13,6 +14,8 @@ import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -69,6 +72,15 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
         if (data == null) {
             data = new Vehicle.State.Data();
         }
+    }
+
+    @Override
+    public Duration duration() {
+        return Duration.between(
+            time(),
+            next().map(VehicleTransition::time)
+                .orElseGet(ZonedDateTime::now)
+        );
     }
 
     public Vehicle vehicle() {
@@ -173,6 +185,15 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
     public Optional<VehicleTransition> pricedSince() {
         price(); // ensure pricedSince is set
         return Optional.ofNullable(pricedSince);
+    }
+
+    /** @return the actual price to bill */
+    public Optional<String> billPrice() {
+        final Config.Currency currency = Garage.instance().config.currency();
+        return price()
+            .map(it -> it.setScale(currency.scale(), RoundingMode.DOWN))
+            .map(BigDecimal::toPlainString)
+            .map(it -> it + currency.name());
     }
 
     /** @return when the reminder timer expires, if any */

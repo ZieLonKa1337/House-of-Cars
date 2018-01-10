@@ -48,4 +48,8 @@ public abstract class Transition<Event, State extends de.codazz.houseofcars.stat
     public ZonedDateTime time() {
         return time;
     }
+
+    /** Implementors must define semantics
+     * about when this transition ends. */
+    public abstract Duration duration();
 }
