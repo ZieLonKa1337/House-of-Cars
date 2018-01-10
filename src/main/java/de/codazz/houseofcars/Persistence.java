@@ -110,6 +110,5 @@ public class Persistence implements Closeable {
     public void close() {
         executor.shutdown();
         entityManager.getEntityManagerFactory().close();
-        entityManager.close();
     }
 }

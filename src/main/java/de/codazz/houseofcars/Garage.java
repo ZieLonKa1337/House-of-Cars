@@ -219,8 +219,8 @@ public class Garage implements Runnable, Closeable {
     }
 
     public static void main(final String[] args) {
-        try (Garage garage = new Garage()) {
-            garage.run();
-        }
+        final Garage garage = new Garage();
+        garage.run();
+        Runtime.getRuntime().addShutdownHook(new Thread(garage::close, "dispose resources"));
     }
 }
