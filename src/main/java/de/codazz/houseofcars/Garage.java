@@ -117,7 +117,6 @@ public class Garage implements Runnable, Closeable {
                             }
                             session.invalidate();
                         } else if (session.attributes().contains("ui")) {
-                            // XXX overlay customer's vehicles' state duration and limit with human-friendly format
                             templateValues.put("session", session.attribute("ui"));
                         }
                     }

@@ -52,4 +52,8 @@ public abstract class Transition<Event, State extends de.codazz.houseofcars.stat
     /** Implementors must define semantics
      * about when this transition ends. */
     public abstract Duration duration();
+
+    public de.codazz.houseofcars.template.Duration durationTemplate() {
+        return new de.codazz.houseofcars.template.Duration(duration());
+    }
 }

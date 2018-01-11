@@ -24,6 +24,7 @@
     }
 
     table.vehicles {
+        table-layout: fixed;
         border-collapse: collapse;
 
         width: 80%;
@@ -75,9 +76,9 @@
         <tr>
             <th>{{license}}</th>
             <td>{{lastTransition.state}}</td>
-            <td>{{lastTransition.duration}}</td>
-            <td {{^lastTransition.billPrice}}class="spacer"{{/lastTransition.billPrice}}>{{lastTransition.billPrice}}</td>
-            <td {{^lastTransition.overdue}}class="spacer"{{/lastTransition.overdue}}>{{lastTransition.overdue}}</td>
+            <td>{{lastTransition.durationTemplate}}</td>
+            <td {{^lastTransition.priceTemplate}}class="spacer"{{/lastTransition.priceTemplate}}>{{lastTransition.priceTemplate}}</td>
+            <td {{^lastTransition.overdueTemplate}}class="spacer"{{/lastTransition.overdueTemplate}}>{{lastTransition.overdueTemplate}}</td>
         </tr>
         {{/session.customer.vehicles}}
     </tbody>

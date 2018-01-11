@@ -1,8 +1,8 @@
 package de.codazz.houseofcars.domain;
 
-import de.codazz.houseofcars.Config;
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.VehicleTransitionListener;
+import de.codazz.houseofcars.template.Price;
 
 import javax.persistence.Column;
 import javax.persistence.EntityListeners;
@@ -14,7 +14,6 @@ import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -78,7 +77,7 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
     public Duration duration() {
         return Duration.between(
             time(),
-            next().map(VehicleTransition::time)
+            next().map(Transition::time)
                 .orElseGet(ZonedDateTime::now)
         );
     }
@@ -187,13 +186,8 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
         return Optional.ofNullable(pricedSince);
     }
 
-    /** @return the actual price to bill */
-    public Optional<String> billPrice() {
-        final Config.Currency currency = Garage.instance().config.currency();
-        return price()
-            .map(it -> it.setScale(currency.scale(), RoundingMode.DOWN))
-            .map(BigDecimal::toPlainString)
-            .map(it -> it + currency.name());
+    public Optional<Price> priceTemplate() {
+        return price().map(Price::new);
     }
 
     /** @return when the reminder timer expires, if any */
@@ -206,5 +200,9 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
     public Optional<ZonedDateTime> overdue() {
         return Optional.ofNullable(data.limit)
             .map(it -> time().plus(it));
+    }
+
+    public Optional<de.codazz.houseofcars.template.ZonedDateTime> overdueTemplate() {
+        return overdue().map(de.codazz.houseofcars.template.ZonedDateTime::new);
     }
 }

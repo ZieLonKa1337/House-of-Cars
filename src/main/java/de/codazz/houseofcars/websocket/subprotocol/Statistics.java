@@ -124,12 +124,7 @@ public class Statistics {
                 ));
                 total.duration = total.duration.dividedBy(transitions.size());
 
-                final long secs = total.duration.toMillis() / 1000;
-                return String.format("%d:%02d:%02d",
-                    secs / 60 / 60 % 24, // h
-                    secs / 60 % 60,      // m
-                    secs % 60            // s
-                );
+                return de.codazz.houseofcars.template.Duration.toString(total.duration);
             }).apply(Garage.instance().persistence.execute(em -> {
                 final TypedQuery<VehicleTransition> query = em
                     .createQuery(qlString + " AND t.state = :state ", VehicleTransition.class)
