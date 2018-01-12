@@ -3,9 +3,8 @@ package de.codazz.houseofcars.domain.view;
 import de.codazz.houseofcars.domain.Vehicle;
 
 import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.OneToOne;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
@@ -14,9 +13,11 @@ import java.util.Optional;
 
 /** @author rstumm2s */
 @Entity(name = "vehicle_state")
-public final class VehicleStatus {
-    @EmbeddedId
-    private PK $;
+public final class VehicleStatus implements Serializable {
+    @Id
+    @OneToOne
+    private Vehicle vehicle;
+
     @Column(nullable = false)
     private String state;
     private ZonedDateTime since;
@@ -24,7 +25,7 @@ public final class VehicleStatus {
     protected VehicleStatus() {}
 
     public Vehicle vehicle() {
-        return $.vehicle;
+        return vehicle;
     }
 
     public Vehicle.State state() {
@@ -35,22 +36,18 @@ public final class VehicleStatus {
         return Optional.ofNullable(since);
     }
 
-    @Embeddable
-    private static final class PK implements Serializable {
-        @OneToOne(optional = false)
-        Vehicle vehicle;
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (!(o instanceof VehicleStatus)) return false;
+        final VehicleStatus that = (VehicleStatus) o;
+        return Objects.equals(vehicle, that.vehicle) &&
+            Objects.equals(state, that.state) &&
+            Objects.equals(since, that.since);
+    }
 
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (!(o instanceof PK)) return false;
-            final PK that = (PK) o;
-            return Objects.equals(vehicle, that.vehicle);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(vehicle);
-        }
+    @Override
+    public int hashCode() {
+        return Objects.hash(vehicle, state, since);
     }
 }

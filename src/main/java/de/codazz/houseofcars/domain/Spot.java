@@ -27,7 +27,7 @@ import java.util.Optional;
     "SELECT COUNT(s) " +
     "FROM Spot s, spot_state t " +
     "WHERE s.type = :type" +
-    " AND t.$.spot = s" +
+    " AND t.spot = s" +
     " AND t.vehicle IS NULL")
 @NamedQuery(name = "Spot.countUsed", query =
     "SELECT COUNT(t) " +
@@ -37,13 +37,13 @@ import java.util.Optional;
     "SELECT COUNT(s) " +
     "FROM Spot s, spot_state t " +
     "WHERE s.type = :type" +
-    " AND t.$.spot = s" +
+    " AND t.spot = s" +
     " AND t.vehicle IS NOT NULL")
 @NamedQuery(name = "Spot.anyFree", query =
     "SELECT s " +
     "FROM Spot s, spot_state t " +
     "WHERE s.type = :type" +
-    " AND t.$.spot = s" +
+    " AND t.spot = s" +
     " AND t.vehicle IS NULL")
 public class Spot extends Entity {
     public static long count() {
@@ -103,7 +103,6 @@ public class Spot extends Entity {
 
     @Id
     @GeneratedValue
-    @Column(nullable = false)
     private int id;
 
     @Column(nullable = false)

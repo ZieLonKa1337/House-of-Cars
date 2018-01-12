@@ -42,7 +42,7 @@ import java.util.Optional;
 @NamedQuery(name = "Vehicle.mayEnter", query =
     "SELECT COUNT(t) = 0 " +
     "FROM vehicle_state t " +
-    "WHERE t.$.vehicle.license = :license" +
+    "WHERE t.vehicle.license = :license" +
     " AND t.state != 'Away'")
 @NamedQuery(name = "Vehicle.lastTransition", query =
     "SELECT t " +
@@ -163,7 +163,7 @@ public class Vehicle extends Entity {
             super(init);
         }
 
-        public abstract class Event extends CheckedEvent implements Vehicle.Event {
+        protected abstract class Event extends CheckedEvent implements Vehicle.Event {
             protected Event(final State state) {
                 super(state);
             }
