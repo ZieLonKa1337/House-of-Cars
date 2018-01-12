@@ -1,10 +1,11 @@
-package de.codazz.houseofcars.business;
+package de.codazz.houseofcars.service;
 
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.VehicleTransition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.PostPersist;
 import java.io.Closeable;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -66,6 +67,7 @@ public class Monitor implements Runnable, Closeable {
         timer.cancel();
     }
 
+    @PostPersist
     public void postPersist(final VehicleTransition transition) {
         startTimers.accept(transition);
     }

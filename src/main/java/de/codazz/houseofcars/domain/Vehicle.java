@@ -339,7 +339,7 @@ public class Vehicle extends Entity {
             try {
                 return data;
             } finally {
-                this.data = null; // gc
+                data = null; // gc
             }
         }
 

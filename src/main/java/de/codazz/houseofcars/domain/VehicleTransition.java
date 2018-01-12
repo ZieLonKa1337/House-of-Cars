@@ -1,7 +1,7 @@
 package de.codazz.houseofcars.domain;
 
 import de.codazz.houseofcars.Garage;
-import de.codazz.houseofcars.VehicleTransitionListener;
+import de.codazz.houseofcars.service.Monitor;
 import de.codazz.houseofcars.template.Price;
 
 import javax.persistence.Column;
@@ -35,7 +35,7 @@ import java.util.function.Function;
     "WHERE t.time > :time" +
     " AND t.vehicle = :vehicle " +
     "ORDER BY t.time")
-@EntityListeners(VehicleTransitionListener.class)
+@EntityListeners(Monitor.class)
 public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
     public static TypedQuery<Transition> since(final ZonedDateTime time) {
         return Garage.instance().persistence.execute(em -> em

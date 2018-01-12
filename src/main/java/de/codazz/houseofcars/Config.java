@@ -71,7 +71,8 @@ public interface Config {
             jdbcUrl, jdbcUser, jdbcPassword,
             new AbstractConfig.AbstractCurrency(currencyName, currencyScale),
             fee,
-            new AbstractConfig.AbstractLimit(limitReminder, limitOverdue));
+            new AbstractConfig.AbstractLimit(limitReminder, limitOverdue)
+        );
     }
 
     interface Limit {

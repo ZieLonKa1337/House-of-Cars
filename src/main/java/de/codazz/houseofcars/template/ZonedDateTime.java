@@ -16,7 +16,7 @@ public class ZonedDateTime {
         return toString(value);
     }
 
-    public String toString(final java.time.ZonedDateTime duration) {
+    public static String toString(final java.time.ZonedDateTime duration) {
         return String.format("%d %s %02d:%02d",
             duration.getDayOfMonth(),
             duration.getMonth().getDisplayName(TextStyle.SHORT, Locale.getDefault()),

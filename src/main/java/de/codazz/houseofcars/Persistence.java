@@ -1,7 +1,6 @@
 package de.codazz.houseofcars;
 
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.jpa.HibernatePersistenceProvider;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -30,14 +29,10 @@ public class Persistence implements Closeable {
 
     public Persistence(final String jdbcUrl, final String jdbcUser, final String jdbcPassword) {
         final Map<String, Object> factoryProps = new HashMap<>();
-        factoryProps.put(AvailableSettings.JPA_JDBC_URL, jdbcUrl);
-        factoryProps.put(AvailableSettings.JPA_JDBC_DRIVER, "org.postgresql.Driver");
-        factoryProps.put(AvailableSettings.JPA_JDBC_USER, jdbcUser);
-        factoryProps.put(AvailableSettings.JPA_JDBC_PASSWORD, jdbcPassword);
-        entityManager = new HibernatePersistenceProvider()
-            .createContainerEntityManagerFactory(
-                new PerstistenceUnitInfoImpl(HibernatePersistenceProvider.class.getName()),
-                factoryProps)
+        if (jdbcUrl != null) factoryProps.put(AvailableSettings.JPA_JDBC_URL, jdbcUrl);
+        if (jdbcUser != null) factoryProps.put(AvailableSettings.JPA_JDBC_USER, jdbcUser);
+        if (jdbcPassword != null) factoryProps.put(AvailableSettings.JPA_JDBC_PASSWORD, jdbcPassword);
+        entityManager = javax.persistence.Persistence.createEntityManagerFactory("default", factoryProps)
             .createEntityManager();
     }
 

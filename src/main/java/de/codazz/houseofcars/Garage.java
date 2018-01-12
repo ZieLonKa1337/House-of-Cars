@@ -1,15 +1,15 @@
 package de.codazz.houseofcars;
 
+import de.codazz.houseofcars.service.Monitor;
 import de.codazz.houseofcars.domain.Customer;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
+import de.codazz.houseofcars.service.Sessions;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.History;
-import de.codazz.houseofcars.websocket.subprotocol.Monitor;
 import de.codazz.houseofcars.websocket.subprotocol.Statistics;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
 import de.codazz.houseofcars.websocket.subprotocol.VGate;
-import org.mindrot.jbcrypt.BCrypt;
 import spark.ModelAndView;
 import spark.Request;
 import spark.Response;
@@ -18,10 +18,7 @@ import spark.Session;
 import spark.TemplateEngine;
 import spark.template.mustache.MustacheTemplateEngine;
 
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.login.LoginContext;
+import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.Closeable;
 import java.io.FileInputStream;
@@ -48,10 +45,11 @@ public class Garage implements Runnable, Closeable {
         return instance;
     }
 
-    public final Persistence persistence;
-    public final de.codazz.houseofcars.business.Monitor monitor;
-
     public final Config config;
+
+    public final Persistence persistence;
+    public final Monitor monitor;
+    public final Sessions sessions;
 
     /** whether the {@link spark.Spark spark} has {@link spark.Service#ignite() ignited} */
     private boolean spark;
@@ -78,7 +76,8 @@ public class Garage implements Runnable, Closeable {
             }
         }
 
-        monitor = new de.codazz.houseofcars.business.Monitor();
+        monitor = new Monitor();
+        sessions = new Sessions();
     }
 
     @Override
@@ -90,7 +89,7 @@ public class Garage implements Runnable, Closeable {
 
         webSocket("/ws/status", Status.class);
         webSocket("/ws/status/history", History.class);
-        webSocket("/ws/status/monitor", Monitor.class);
+        webSocket("/ws/status/monitor", de.codazz.houseofcars.websocket.subprotocol.Monitor.class);
         webSocket("/ws/statistics", Statistics.class);
         webSocket("/ws/gate", Gate.class);
         webSocket("/ws/vgate", VGate.class);
@@ -111,10 +110,8 @@ public class Garage implements Runnable, Closeable {
                     final Session session = request.session(false);
                     if (session != null) {
                         if (request.queryParams().contains("logout")) {
-                            final LoginContext loginCtx = session.attribute("context");
-                            if (loginCtx != null) {
-                                loginCtx.logout();
-                            }
+                            final Subject subject = session.attribute("subject");
+                            sessions.logout(subject);
                             session.invalidate();
                         } else if (session.attributes().contains("ui")) {
                             templateValues.put("session", session.attribute("ui"));
@@ -138,27 +135,10 @@ public class Garage implements Runnable, Closeable {
             final Vehicle vehicle = persistence.execute(em -> em.find(Vehicle.class, license));
             if (vehicle != null) {
                 // find or create customer
-                final Customer customer = vehicle.owner().orElseGet(() -> persistence.transact((em, __) -> {
-                    final Customer c = new Customer(
-                        BCrypt.hashpw(pass, BCrypt.gensalt()),
-                        vehicle
-                    );
-                    em.persist(c);
-                    return c;
-                }));
+                final Customer customer = vehicle.owner().orElseGet(() -> sessions.register(license, pass));
 
                 try { // authenticate
-                    final LoginContext loginCtx = new LoginContext("default", callbacks -> {
-                        for (final Callback callback : callbacks) {
-                            if (callback instanceof NameCallback) {
-                                ((NameCallback) callback).setName(license);
-                            } else if (callback instanceof PasswordCallback) {
-                                ((PasswordCallback) callback).setPassword(pass.toCharArray());
-                            }
-                        }
-                    });
-                    loginCtx.login();
-                    request.session().attribute("context", loginCtx);
+                    request.session().attribute("subject", sessions.login(license, pass));
                 } catch (final LoginException ignore) { /* login failed */ }
 
                 if (request.session(false) != null) { // login successful
@@ -177,9 +157,9 @@ public class Garage implements Runnable, Closeable {
             return null;
         });
         get("/dashboard", new Route() {
-            final Map<String, Object> templateValues = new HashMap<>(History.templateDefaults.size() + Monitor.templateDefaults.size(), 1); {
+            final Map<String, Object> templateValues = new HashMap<>(History.templateDefaults.size() + de.codazz.houseofcars.websocket.subprotocol.Monitor.templateDefaults.size(), 1); {
                 templateValues.putAll(History.templateDefaults);
-                templateValues.putAll(Monitor.templateDefaults);
+                templateValues.putAll(de.codazz.houseofcars.websocket.subprotocol.Monitor.templateDefaults);
             }
             final ModelAndView modelAndView = modelAndView(templateValues, "dashboard.html.mustache");
 
@@ -208,7 +188,7 @@ public class Garage implements Runnable, Closeable {
 
             Status.close();
             History.close();
-            Monitor.close();
+            de.codazz.houseofcars.websocket.subprotocol.Monitor.close();
         }
         persistence.close();
         monitor.close();

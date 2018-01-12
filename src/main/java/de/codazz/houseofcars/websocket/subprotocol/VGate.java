@@ -63,6 +63,4 @@ public class VGate extends Gate {
 
         return response;
     }
-
-
 }
