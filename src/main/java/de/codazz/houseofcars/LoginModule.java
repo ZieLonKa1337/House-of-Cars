@@ -71,6 +71,9 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
         assert customer != null : "not logged in";
         subject.getPrincipals().remove(customer);
         customer = null;
+
+        subject.getPublicCredentials().clear();
+        subject.getPrivateCredentials().clear();
         return true;
     }
 }
