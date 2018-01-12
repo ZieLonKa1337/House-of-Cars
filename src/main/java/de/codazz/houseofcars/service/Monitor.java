@@ -2,6 +2,7 @@ package de.codazz.houseofcars.service;
 
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.VehicleTransition;
+import de.codazz.houseofcars.websocket.subprotocol.Notifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,10 @@ public class Monitor implements Runnable, Closeable {
                     public void run() {
                         log.trace("reminding {} to pick up {}", owner.getName(), transition.vehicle().license());
                         de.codazz.houseofcars.websocket.subprotocol.Monitor.update();
+                        Notifier.push(owner, new Notifier.Notification(
+                            transition.vehicle().license() + "'s spot expires " + de.codazz.houseofcars.template.ZonedDateTime.toString(limit),
+                            "Pick up before limit to avoid extra cost"
+                        ));
                     }
                 }, Date.from(limit.toInstant()));
             })
@@ -44,6 +49,12 @@ public class Monitor implements Runnable, Closeable {
                     public void run() {
                         log.warn("{} is overdue!", transition.vehicle().license());
                         de.codazz.houseofcars.websocket.subprotocol.Monitor.update();
+                        transition.vehicle().owner().ifPresent(owner ->
+                            Notifier.push(owner, new Notifier.Notification(
+                                transition.vehicle().license() + " is overdue!",
+                                "Should have picked up until " + de.codazz.houseofcars.template.ZonedDateTime.toString(limit)
+                            ))
+                        );
                     }
                 }, Date.from(limit.toInstant()));
             });

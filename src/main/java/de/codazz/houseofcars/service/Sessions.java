@@ -11,15 +11,16 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.util.Collections;
-import java.util.HashSet;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /** @author rstumm2s */
 public class Sessions {
-    public final Map<Subject, LoginContext> sessions = new ConcurrentHashMap<>(8, .9f, 1);
+    private final Map<Subject, LoginContext> sessions = new ConcurrentHashMap<>(8, .9f, 1);
 
     public Customer register(final String license, final String pass) {
         final Vehicle vehicle = Garage.instance().persistence.execute(em -> em.find(Vehicle.class, license));
@@ -54,5 +55,9 @@ public class Sessions {
         } else {
             throw new LoginException("not logged in");
         }
+    }
+
+    public Stream<Subject> present() {
+        return sessions.keySet().stream();
     }
 }

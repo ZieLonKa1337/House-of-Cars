@@ -57,4 +57,17 @@ public class Customer extends Entity implements Principal {
     public String getName() {
         return String.valueOf(id);
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Customer)) return false;
+        final Customer customer = (Customer) o;
+        return id == customer.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(id);
+    }
 }

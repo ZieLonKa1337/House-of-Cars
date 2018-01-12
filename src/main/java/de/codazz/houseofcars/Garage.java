@@ -1,12 +1,13 @@
 package de.codazz.houseofcars;
 
-import de.codazz.houseofcars.service.Monitor;
 import de.codazz.houseofcars.domain.Customer;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
+import de.codazz.houseofcars.service.Monitor;
 import de.codazz.houseofcars.service.Sessions;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.History;
+import de.codazz.houseofcars.websocket.subprotocol.Notifier;
 import de.codazz.houseofcars.websocket.subprotocol.Statistics;
 import de.codazz.houseofcars.websocket.subprotocol.Status;
 import de.codazz.houseofcars.websocket.subprotocol.VGate;
@@ -90,6 +91,7 @@ public class Garage implements Runnable, Closeable {
         webSocket("/ws/status", Status.class);
         webSocket("/ws/status/history", History.class);
         webSocket("/ws/status/monitor", de.codazz.houseofcars.websocket.subprotocol.Monitor.class);
+        webSocket("/ws/status/notifications", Notifier.class);
         webSocket("/ws/statistics", Statistics.class);
         webSocket("/ws/gate", Gate.class);
         webSocket("/ws/vgate", VGate.class);
@@ -138,7 +140,12 @@ public class Garage implements Runnable, Closeable {
                 final Customer customer = vehicle.owner().orElseGet(() -> sessions.register(license, pass));
 
                 try { // authenticate
-                    request.session().attribute("subject", sessions.login(license, pass));
+                    final Subject subject = sessions.login(license, pass);
+                    request.session().attribute("subject", subject);
+
+                    final MagicCookie magic = new MagicCookie();
+                    subject.getPublicCredentials().add(magic);
+                    response.cookie("hoc-magic", magic.toString(), 60 /*s*/ * 60 /*m*/ * 24 /*h*/ * 3 /*d*/);
                 } catch (final LoginException ignore) { /* login failed */ }
 
                 if (request.session(false) != null) { // login successful
