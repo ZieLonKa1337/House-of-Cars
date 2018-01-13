@@ -18,6 +18,7 @@ public class AbstractConfig implements Config {
     protected HashMap<String, String> fee;
     protected transient Map<Spot.Type, BigDecimal> _fee;
     protected AbstractLimit limit;
+    protected String motd;
 
     /** Creates an uninitialized instance.
      * It is up to the subclass or caller
@@ -29,7 +30,8 @@ public class AbstractConfig implements Config {
         final String jdbcUrl, final String jdbcUser, final String jdbcPassword,
         final Currency currency,
         final Map<Spot.Type, BigDecimal> fee,
-        final Limit limit
+        final Limit limit,
+        final String motd
     ) {
         this.port = port;
         this.jdbcUrl = jdbcUrl;
@@ -49,6 +51,7 @@ public class AbstractConfig implements Config {
             : limit == null
                 ? new AbstractLimit()
                 : new AbstractLimit(limit);
+        this.motd = motd;
     }
 
     @Override
@@ -89,6 +92,11 @@ public class AbstractConfig implements Config {
     @Override
     public Limit limit() {
         return limit;
+    }
+
+    @Override
+    public String motd() {
+        return motd;
     }
 
     @Override

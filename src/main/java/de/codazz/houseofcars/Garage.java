@@ -228,7 +228,10 @@ public class Garage implements Runnable, Closeable {
             }
         });
         get("/vgate", new Route() {
-            final ModelAndView modelAndView = modelAndView(Status.templateDefaults, "vgate.html.mustache");
+            final Map<String, Object> templateValues = new HashMap<>(Status.templateDefaults); {
+                templateValues.put("motd", config.motd());
+            }
+            final ModelAndView modelAndView = modelAndView(templateValues, "vgate.html.mustache");
 
             @Override
             public Object handle(final Request request, final Response response) {

@@ -23,6 +23,7 @@ public class JsonConfig extends AbstractConfig {
             "jdbc:postgresql://localhost:5432/houseofcars", "houseofcars", null,
             null,
             null,
+            null,
             null
         );
     }

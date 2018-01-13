@@ -26,14 +26,16 @@ public class ConfigTest {
                 "jdbc:1", "1", "1",
                 new AbstractConfig.AbstractCurrency("1", 1),
                 fee1,
-                new AbstractConfig.AbstractLimit(Duration.ofHours(1), Duration.ofDays(1))
+                new AbstractConfig.AbstractLimit(Duration.ofHours(1), Duration.ofDays(1)),
+                "1"
             ),
             c2 = new AbstractConfig(
                 2,
                 "jdbc:2", "2", "2",
                 new AbstractConfig.AbstractCurrency("2", 2),
                 fee2,
-                new AbstractConfig.AbstractLimit(Duration.ofHours(2), Duration.ofDays(2))
+                new AbstractConfig.AbstractLimit(Duration.ofHours(2), Duration.ofDays(2)),
+                "2"
             );
 
         final Config
@@ -50,6 +52,7 @@ public class ConfigTest {
         assertEquals(c1.currency(),     m1_2.currency());
         assertEquals(c1.fee(),          m1_2.fee());
         assertEquals(c1.limit(),        m1_2.limit());
+        assertEquals(c1.motd(),         m1_2.motd());
 
         // m2_1
         assertEquals(c2.port(),         m2_1.port());
@@ -59,6 +62,7 @@ public class ConfigTest {
         assertEquals(c2.currency(),     m2_1.currency());
         assertEquals(c2.fee(),          m2_1.fee());
         assertEquals(c2.limit(),        m2_1.limit());
+        assertEquals(c2.motd(),         m2_1.motd());
 
         // symmetry
         assertEquals(m2_1, m1_2i);

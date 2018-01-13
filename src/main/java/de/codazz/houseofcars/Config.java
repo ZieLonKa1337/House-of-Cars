@@ -16,6 +16,7 @@ public interface Config {
     Currency currency();
     Map<Spot.Type, BigDecimal> fee();
     Limit limit();
+    String motd();
 
     /** @param other the instance to merge into this instance
      * @param preserveOther if {@code true}, entries from
@@ -29,6 +30,7 @@ public interface Config {
         String currencyName; Integer currencyScale;
         final Map<Spot.Type, BigDecimal> fee = new HashMap<>();
         Duration limitReminder, limitOverdue;
+        String motd;
 
         final Config innerOther;
         if (preserveOther) {
@@ -42,6 +44,7 @@ public interface Config {
             fee.putAll(other.fee());
             limitReminder = other.limit().reminder();
             limitOverdue = other.limit().overdue();
+            motd = other.motd();
             innerOther = this;
         } else {
             port = port();
@@ -54,6 +57,7 @@ public interface Config {
             fee.putAll(fee());
             limitReminder = limit().reminder();
             limitOverdue = limit().overdue();
+            motd = motd();
             innerOther = other;
         }
         if (port == 0) port = innerOther.port();
@@ -65,13 +69,15 @@ public interface Config {
         // fee already merged
         if (limitReminder == null) limitReminder = innerOther.limit().reminder();
         if (limitOverdue == null) limitOverdue = innerOther.limit().overdue();
+        if (motd == null) motd = innerOther.motd();
 
         return new AbstractConfig(
             port,
             jdbcUrl, jdbcUser, jdbcPassword,
             new AbstractConfig.AbstractCurrency(currencyName, currencyScale),
             fee,
-            new AbstractConfig.AbstractLimit(limitReminder, limitOverdue)
+            new AbstractConfig.AbstractLimit(limitReminder, limitOverdue),
+            motd
         );
     }
 
