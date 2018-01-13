@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class History extends Broadcast {
     public static final Map<String, Object> templateDefaults; static {
         final Map<String, Object> map = new HashMap<>(1);
-        map.put("vehicleStates", Arrays.stream(Vehicle.State.values()).map(Enum::name).toArray(String[]::new));
+        map.put("vehicleStates", Vehicle.State.values());
         templateDefaults = Collections.unmodifiableMap(map);
     }
 

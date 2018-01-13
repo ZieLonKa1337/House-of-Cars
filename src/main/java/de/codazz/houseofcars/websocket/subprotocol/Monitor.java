@@ -16,7 +16,6 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.Map;
 public class Monitor extends Broadcast {
     public static final Map<String, Object> templateDefaults; static {
         final Map<String, Object> map = new HashMap<>(1);
-        map.put("vehicleStates", Arrays.stream(Vehicle.State.values()).map(Enum::name).toArray(String[]::new));
+        map.put("vehicleStates", Vehicle.State.values());
         templateDefaults = Collections.unmodifiableMap(map);
     }
 
