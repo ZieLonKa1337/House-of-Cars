@@ -3,6 +3,8 @@ package de.codazz.houseofcars;
 import de.codazz.houseofcars.domain.Customer;
 import de.codazz.houseofcars.domain.Vehicle;
 import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -11,11 +13,12 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
+import javax.security.auth.spi.LoginModule;
 import java.io.IOException;
 import java.util.Map;
 
 /** @author rstumm2s */
-public class LoginModule implements javax.security.auth.spi.LoginModule {
+public class CustomerLogin implements LoginModule {
     private Subject subject;
     private CallbackHandler callbackHandler;
 
@@ -69,6 +72,7 @@ public class LoginModule implements javax.security.auth.spi.LoginModule {
     @Override
     public boolean logout() {
         assert customer != null : "not logged in";
+
         subject.getPrincipals().remove(customer);
         customer = null;
 

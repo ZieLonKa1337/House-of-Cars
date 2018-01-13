@@ -4,6 +4,8 @@ import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.domain.Customer;
 import de.codazz.houseofcars.domain.Vehicle;
 import org.mindrot.jbcrypt.BCrypt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -11,16 +13,16 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.security.SecureRandom;
-import java.util.Base64;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 /** @author rstumm2s */
 public class Sessions {
-    private final Map<Subject, LoginContext> sessions = new ConcurrentHashMap<>(8, .9f, 1);
+    private static final Logger log = LoggerFactory.getLogger(Sessions.class);
+
+    private final Map<Subject, LoginContext> sessions = Collections.synchronizedMap(new IdentityHashMap<>());
 
     public Customer register(final String license, final String pass) {
         final Vehicle vehicle = Garage.instance().persistence.execute(em -> em.find(Vehicle.class, license));
@@ -46,15 +48,17 @@ public class Sessions {
         });
         ctx.login();
         sessions.put(ctx.getSubject(), ctx);
+        log.trace("logged in {}", ctx.getSubject());
         return ctx.getSubject();
     }
 
     public void logout(final Subject subject) throws LoginException {
-        if (sessions.containsKey(subject)) {
-            sessions.get(subject).logout();
-        } else {
+        log.trace("logging out {}", subject);
+        final LoginContext ctx = sessions.get(subject);
+        if (ctx != null) {
+            ctx.logout();
+        } else
             throw new LoginException("not logged in");
-        }
     }
 
     public Stream<Subject> present() {
