@@ -183,16 +183,18 @@ public class Vehicle extends StatefulEntity<Vehicle, Vehicle.Lifecycle, Vehicle.
             } else { // inner transition
                 log.debug("{}: {}", license, state());
             }
-            final VehicleTransition transition = Garage.instance().persistence.transact((em, __) -> {
-                final VehicleTransition t = new VehicleTransition(Vehicle.this,
-                    state != null ? state : state(),
-                    data
-                );
-                em.persist(t);
-                return t;
-            });
-            Status.update();
-            return transition;
+            try {
+                return Garage.instance().persistence.transact((em, __) -> {
+                    final VehicleTransition t = new VehicleTransition(Vehicle.this,
+                        state != null ? state : state(),
+                        data
+                    );
+                    em.persist(t);
+                    return t;
+                });
+            } finally {
+                Status.update();
+            }
         }
 
         /** the vehicle entered the garage */

@@ -7,6 +7,24 @@ create table Customer (
 	primary key (id)
 );
 
+create table Reservation (
+	id int8 not null,
+	OPTLOCK int8 not null,
+	"end" timestamptz not null,
+	spotType varchar(255),
+	start timestamptz not null,
+	customer_id int8 not null,
+	primary key (id)
+);
+
+create table ReservationTransition (
+	time timestamptz not null,
+	OPTLOCK int8 not null,
+	state varchar(255) not null,
+	entity_id int8 not null,
+	primary key (time)
+);
+
 create table Spot (
 	id int4 not null,
 	OPTLOCK int8 not null,
@@ -34,6 +52,12 @@ create table VehicleTransition (
 	entity_license varchar(255) not null,
 	primary key (time)
 );
+
+alter table Reservation
+	add constraint FKmrfygyy9wi4be7nlyuogrn24n foreign key (customer_id)references Customer;
+
+alter table ReservationTransition
+	add constraint FK5qt0age6uv59fn156x0l0npxv foreign key (entity_id)references Reservation;
 
 alter table Vehicle
 	add constraint FKbca7rhv01903thhh98q0xa54d foreign key (owner_id)references Customer;

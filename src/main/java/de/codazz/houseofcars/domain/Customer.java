@@ -1,17 +1,30 @@
 package de.codazz.houseofcars.domain;
 
+import de.codazz.houseofcars.Garage;
+
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import java.security.Principal;
+import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 /** @author rstumm2s */
+@NamedQuery(name = Customer.QUERY_RESERVATIONS, query =
+    "SELECT r " +
+    "FROM Reservation r " +
+    "WHERE r.end >= CURRENT_TIMESTAMP" +
+    " AND r.customer = :customer " +
+    "ORDER BY r.start, r.end")
 @javax.persistence.Entity
 public class Customer extends Entity implements Principal {
+    static final String QUERY_RESERVATIONS = "Customer.reservations";
+
     @Id
     @GeneratedValue
     private long id;
@@ -50,6 +63,13 @@ public class Customer extends Entity implements Principal {
 
     public Set<Vehicle> vehicles() {
         return Collections.unmodifiableSet(vehicles);
+    }
+
+    public List<Reservation> reservations() {
+        return Garage.instance().persistence.execute(em -> em
+            .createNamedQuery(QUERY_RESERVATIONS, Reservation.class)
+            .setParameter("customer", this)
+            .getResultList());
     }
 
     /** @return the {@link #id} */

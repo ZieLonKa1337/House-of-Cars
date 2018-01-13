@@ -13,7 +13,7 @@ import java.util.Optional;
 
 /** @author rstumm2s */
 @MappedSuperclass
-abstract class StatefulEntity<Class extends StatefulEntity<Class, Lifecycle, State, Data, Event, Transition>, Lifecycle extends StateMachine<State, Data, Event>, State extends de.codazz.houseofcars.statemachine.State<Data, Event>, Data, Event, Transition extends StatefulEntityTransition<Transition, Class, Event, State, Data>> extends Entity {
+public abstract class StatefulEntity<Class extends StatefulEntity<Class, Lifecycle, State, Data, Event, Transition>, Lifecycle extends StateMachine<State, Data, Event>, State extends de.codazz.houseofcars.statemachine.State<Data, Event>, Data, Event, Transition extends StatefulEntityTransition<Transition, Class, Event, State, Data>> extends Entity {
     @Transient
     private transient final java.lang.Class<Transition> transitionClass;
 
@@ -122,7 +122,14 @@ abstract class StatefulEntityTransition<Class extends StatefulEntityTransition<C
         );
     }
 
+    private transient volatile de.codazz.houseofcars.template.Duration durationTemplate;
+
     public de.codazz.houseofcars.template.Duration durationTemplate() {
-        return new de.codazz.houseofcars.template.Duration(duration());
+        if (durationTemplate == null && next().isPresent()) {
+            durationTemplate = new de.codazz.houseofcars.template.Duration(duration());
+        }
+        return durationTemplate != null
+            ? durationTemplate
+            : new de.codazz.houseofcars.template.Duration(duration());
     }
 }

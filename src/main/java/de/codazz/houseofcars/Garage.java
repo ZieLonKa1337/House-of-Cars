@@ -1,6 +1,7 @@
 package de.codazz.houseofcars;
 
 import de.codazz.houseofcars.domain.Customer;
+import de.codazz.houseofcars.domain.Reservation;
 import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.service.Monitor;
@@ -24,6 +25,9 @@ import javax.security.auth.login.LoginException;
 import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -116,7 +120,14 @@ public class Garage implements Runnable, Closeable {
                             sessions.logout(subject);
                             session.invalidate();
                         } else if (session.attributes().contains("ui")) {
-                            templateValues.put("session", session.attribute("ui"));
+                            // update model
+                            persistence.refresh();
+                            final Map<String, Object> ui = session.attribute("ui");
+                            { // customer
+                                final long customerId = ((Customer) ui.get("customer")).id();
+                                ui.put("customer", persistence.execute(em -> em.find(Customer.class, customerId)));
+                            }
+                            templateValues.put("session", ui);
                         }
                     }
                 }
@@ -159,6 +170,47 @@ public class Garage implements Runnable, Closeable {
                     request.session().attribute("ui", ui);
                 }
             } // TODO show message that only known vehicles may be registered
+
+            response.redirect("/");
+            return null;
+        });
+        post("/reservations", (request, response) -> {
+            if (request.session(false) == null) return null;
+
+            final Subject subject = request.session().attribute("subject");
+            final Customer customer = subject.getPrincipals(Customer.class).iterator().next();
+
+            switch (request.queryParams("type")) {
+                case "new": {
+                    final ZonedDateTime
+                        start = ZonedDateTime.parse(
+                            request.queryParams("start-date") +
+                            "T" + request.queryParams("start-time") +
+                            ZoneId.systemDefault().getRules().getOffset(Instant.now())
+                        ),
+                        end = ZonedDateTime.parse(
+                            request.queryParams("end-date") +
+                            "T" + request.queryParams("end-time") +
+                            ZoneId.systemDefault().getRules().getOffset(Instant.now())
+                        );
+                    final Spot.Type type = Spot.Type.valueOf(request.queryParams("spotType"));
+                    final Reservation reservation = new Reservation(customer, start, end, type);
+                    persistence.<Void>transact((em, __) -> {
+                        em.persist(reservation);
+                       return null;
+                    });
+                } break;
+                case "annull": {
+                    final long id = Long.parseLong(request.queryParams("id"));
+                    final Reservation reservation = persistence.execute(em -> em.find(Reservation.class, id));
+                    if (reservation != null) {
+                        reservation.state().new AnnullEvent().fire();
+                    } else
+                        return null;
+                } break;
+                default:
+                    return null;
+            }
 
             response.redirect("/");
             return null;

@@ -28,7 +28,16 @@ public interface State<Data, Event> {
             try {
                 action = getClass().getMethod("on", event.getClass());
             } catch (final NoSuchMethodException noAction) {
-                throw new RuntimeException(noAction);
+                if (getClass().getSuperclass().isEnum()) {
+                    try {
+                        action = getClass().getSuperclass().getDeclaredMethod("on", event.getClass());
+                        action.setAccessible(true);
+                    } catch (final NoSuchMethodException noEnumAction) {
+                        throw new RuntimeException(noEnumAction);
+                    }
+                } else {
+                    throw new RuntimeException(noAction);
+                }
             }
         }
 

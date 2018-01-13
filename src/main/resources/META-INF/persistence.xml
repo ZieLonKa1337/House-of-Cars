@@ -6,6 +6,8 @@
     <persistence-unit name="default" transaction-type="RESOURCE_LOCAL">
         <class>de.codazz.houseofcars.domain.Customer</class>
         <class>de.codazz.houseofcars.domain.Spot</class>
+        <class>de.codazz.houseofcars.domain.Reservation</class>
+        <class>de.codazz.houseofcars.domain.ReservationTransition</class>
         <class>de.codazz.houseofcars.domain.Vehicle</class>
         <class>de.codazz.houseofcars.domain.VehicleTransition</class>
         <class>de.codazz.houseofcars.domain.view.SpotStatus</class>

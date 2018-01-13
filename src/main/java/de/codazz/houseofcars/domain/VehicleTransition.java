@@ -8,13 +8,11 @@ import javax.persistence.Column;
 import javax.persistence.EntityListeners;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -157,8 +155,16 @@ public class VehicleTransition extends StatefulEntityTransition<VehicleTransitio
         return Optional.ofNullable(pricedSince);
     }
 
+    @Transient
+    private transient volatile Price priceTemplate;
+
     public Optional<Price> priceTemplate() {
-        return price().map(Price::new);
+        return price().map(value -> {
+            if (priceTemplate == null) {
+                priceTemplate = new Price(value);
+            }
+            return priceTemplate;
+        });
     }
 
     /** @return when the reminder timer expires, if any */
@@ -173,7 +179,15 @@ public class VehicleTransition extends StatefulEntityTransition<VehicleTransitio
             .map(it -> time().plus(it));
     }
 
+    @Transient
+    private transient volatile de.codazz.houseofcars.template.ZonedDateTime overdueTemplate;
+
     public Optional<de.codazz.houseofcars.template.ZonedDateTime> overdueTemplate() {
-        return overdue().map(de.codazz.houseofcars.template.ZonedDateTime::new);
+        return overdue().map(value -> {
+            if (overdueTemplate == null) {
+                overdueTemplate = new de.codazz.houseofcars.template.ZonedDateTime(value);
+            }
+            return overdueTemplate;
+        });
     }
 }

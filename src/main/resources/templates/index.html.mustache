@@ -23,17 +23,35 @@
         height: 3em;
     }
 
-    table.vehicles {
-        table-layout: fixed;
+    table.table {
         border-collapse: collapse;
 
         width: 80%;
         margin: auto;
     }
 
-    table.vehicles th,
-    table.vehicles td {
+    table.table th,
+    table.table td {
         border: 1px solid;
+    }
+
+    table.fixed {
+        table-layout: fixed;
+    }
+
+    .reservations {
+        margin: 1em;
+        margin-left: auto;
+        margin-right: auto;
+
+        border-radius: .225cm;
+        background: burlywood;
+        box-shadow: inset 0px 0px 3px 1px;
+        padding: .75em;
+    }
+
+    .expand:only-child {
+        width: 100%;
     }
 
     table .spacer {
@@ -64,7 +82,7 @@
 </a>
 
 <h2>My Vehicles</h2>
-<table class="vehicles">
+<table class="table fixed">
     <thead>
         <tr>
             <th class="spacer"></th>
@@ -86,6 +104,71 @@
         {{/session.customer.vehicles}}
     </tbody>
 </table>
+
+<h2>My Reservations</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th class="spacer"></th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Spot</th>
+            <th>State</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#session.customer.reservations}}
+        <tr>
+            <th>
+                {{id}}
+                {{#state.state.active}}
+                <form action="reservations" method="POST">
+                    <input type="hidden" name="type" value="annull"/>
+                    <input type="hidden" name="id" value="{{id}}"/>
+                    <button>annull</button>
+                </form>
+                {{/state.state.active}}
+            </th>
+            <td>{{startTemplate}}</td>
+            <td>{{endTemplate}}</td>
+            <td>{{spotType}}</td>
+            <td>{{state.state}}</td>
+        </tr>
+        {{/session.customer.reservations}}
+        <tr>
+            <th class="spacer"></th>
+            <td>
+                <input name="start-date" type="date" required="" form="new-reservation"/>
+                <input name="start-time" type="time" required="" form="new-reservation"/>
+            </td>
+            <td>
+                <input name="end-date" type="date" required="" form="new-reservation"/>
+                <input name="end-time" type="time" required="" form="new-reservation"/>
+            </td>
+            <td>
+                <select name="spotType" required="" class="expand" form="new-reservation">
+                    {{#spotTypes}}
+                    <option value="{{.}}">{{.}}</option>
+                    {{/spotTypes}}
+                </select>
+            </td>
+            <td>
+                <button class="expand" form="new-reservation">book</button>
+            </td>
+        </tr>
+        {{#session.customer.reservations.empty}}
+        <tr>
+            <td class="spacer"></td>
+            <td colspan="4">
+                You have no current reservations.
+            </td>
+        </tr>
+        {{/session.customer.reservations.empty}}
+    </tbody>
+</table>
+<form id="new-reservation" action="reservations" method="POST">
+    <input type="hidden" name="type" value="new"/>
+</form>
 {{/session}}
 </body>
 </html>

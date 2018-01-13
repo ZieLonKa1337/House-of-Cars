@@ -47,13 +47,13 @@ import java.util.Optional;
     " AND t.vehicle IS NULL")
 public class Spot extends Entity {
     static final String
-        QUERY_COUNT = "Spot.count",
-        QUERY_COUNT_TYPE = "Spot.countType",
-        QUERY_COUNT_FREE = "Spot.countFree",
+        QUERY_COUNT           = "Spot.count",
+        QUERY_COUNT_TYPE      = "Spot.countType",
+        QUERY_COUNT_FREE      = "Spot.countFree",
         QUERY_COUNT_FREE_TYPE = "Spot.countFreeType",
-        QUERY_COUNT_USED = "Spot.countUsed",
+        QUERY_COUNT_USED      = "Spot.countUsed",
         QUERY_COUNT_USED_TYPE = "Spot.countUsedType",
-        QUERY_ANY_FREE = "Spot.anyFree";
+        QUERY_ANY_FREE        = "Spot.anyFree";
 
     public static long count() {
         return Garage.instance().persistence.execute(em -> em
@@ -69,32 +69,41 @@ public class Spot extends Entity {
     }
 
     public static long countFree() {
-        return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery(QUERY_COUNT_FREE, Long.class)
-            .getSingleResult());
+        return
+            Garage.instance().persistence.execute(em -> em
+                .createNamedQuery(QUERY_COUNT_FREE, Long.class)
+                .getSingleResult()) -
+            Reservation.countCurrent();
     }
 
     public static long countFree(final Type type) {
-        return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery(QUERY_COUNT_FREE_TYPE, Long.class)
-            .setParameter("type", type)
-            .getSingleResult());
+        return
+            Garage.instance().persistence.execute(em -> em
+                .createNamedQuery(QUERY_COUNT_FREE_TYPE, Long.class)
+                .setParameter("type", type)
+                .getSingleResult()) -
+            Reservation.countCurrent(type);
     }
 
     public static long countUsed() {
-        return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery(QUERY_COUNT_USED, Long.class)
-            .getSingleResult());
+        return
+            Garage.instance().persistence.execute(em -> em
+                .createNamedQuery(QUERY_COUNT_USED, Long.class)
+                .getSingleResult()) +
+            Reservation.countCurrent();
     }
 
     public static long countUsed(final Type type) {
-        return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery(QUERY_COUNT_USED_TYPE, Long.class)
-            .setParameter("type", type)
-            .getSingleResult());
+        return
+            Garage.instance().persistence.execute(em -> em
+                .createNamedQuery(QUERY_COUNT_USED_TYPE, Long.class)
+                .setParameter("type", type)
+                .getSingleResult()) +
+            Reservation.countCurrent(type);
     }
 
     public static Optional<Spot> anyFree() {
+        if (countFree() == 0) return Optional.empty();
         for (Type type : Type.values()) {
             final Optional<Spot> spot = anyFree(type);
             if (spot.isPresent()) return spot;
@@ -103,11 +112,13 @@ public class Spot extends Entity {
     }
 
     public static Optional<Spot> anyFree(final Type type) {
-        return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery(QUERY_ANY_FREE, Spot.class)
-            .setParameter("type", type)
-            .setMaxResults(1)
-            .getResultStream().findFirst());
+        return countFree() > 0
+            ? Garage.instance().persistence.execute(em -> em
+                .createNamedQuery(QUERY_ANY_FREE, Spot.class)
+                .setParameter("type", type)
+                .setMaxResults(1)
+                .getResultStream().findFirst())
+            : Optional.empty();
     }
 
     @Id
