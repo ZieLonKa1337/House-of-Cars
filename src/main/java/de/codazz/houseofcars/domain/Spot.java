@@ -12,75 +12,84 @@ import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
-@NamedQuery(name = "Spot.count", query =
+@NamedQuery(name = Spot.QUERY_COUNT, query =
     "SELECT COUNT(s) " +
     "FROM Spot s")
-@NamedQuery(name = "Spot.countType", query =
+@NamedQuery(name = Spot.QUERY_COUNT_TYPE, query =
     "SELECT COUNT(s) " +
     "FROM Spot s " +
     "WHERE s.type = :type")
-@NamedQuery(name = "Spot.countFree", query =
+@NamedQuery(name = Spot.QUERY_COUNT_FREE, query =
     "SELECT COUNT(t) " +
     "FROM spot_state t " +
     "WHERE t.vehicle IS NULL")
-@NamedQuery(name = "Spot.countFreeType", query =
+@NamedQuery(name = Spot.QUERY_COUNT_FREE_TYPE, query =
     "SELECT COUNT(s) " +
     "FROM Spot s, spot_state t " +
     "WHERE s.type = :type" +
     " AND t.spot = s" +
     " AND t.vehicle IS NULL")
-@NamedQuery(name = "Spot.countUsed", query =
+@NamedQuery(name = Spot.QUERY_COUNT_USED, query =
     "SELECT COUNT(t) " +
     "FROM spot_state t " +
     "WHERE t.vehicle IS NOT NULL")
-@NamedQuery(name = "Spot.countUsedType", query =
+@NamedQuery(name = Spot.QUERY_COUNT_USED_TYPE, query =
     "SELECT COUNT(s) " +
     "FROM Spot s, spot_state t " +
     "WHERE s.type = :type" +
     " AND t.spot = s" +
     " AND t.vehicle IS NOT NULL")
-@NamedQuery(name = "Spot.anyFree", query =
+@NamedQuery(name = Spot.QUERY_ANY_FREE, query =
     "SELECT s " +
     "FROM Spot s, spot_state t " +
     "WHERE s.type = :type" +
     " AND t.spot = s" +
     " AND t.vehicle IS NULL")
 public class Spot extends Entity {
+    static final String
+        QUERY_COUNT = "Spot.count",
+        QUERY_COUNT_TYPE = "Spot.countType",
+        QUERY_COUNT_FREE = "Spot.countFree",
+        QUERY_COUNT_FREE_TYPE = "Spot.countFreeType",
+        QUERY_COUNT_USED = "Spot.countUsed",
+        QUERY_COUNT_USED_TYPE = "Spot.countUsedType",
+        QUERY_ANY_FREE = "Spot.anyFree";
+
     public static long count() {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Spot.count", Long.class)
+            .createNamedQuery(QUERY_COUNT, Long.class)
             .getSingleResult());
     }
 
     public static long count(final Type type) {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Spot.countType", Long.class)
+            .createNamedQuery(QUERY_COUNT_TYPE, Long.class)
             .setParameter("type", type)
             .getSingleResult());
     }
 
     public static long countFree() {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Spot.countFree", Long.class)
+            .createNamedQuery(QUERY_COUNT_FREE, Long.class)
             .getSingleResult());
     }
 
     public static long countFree(final Type type) {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Spot.countFreeType", Long.class)
+            .createNamedQuery(QUERY_COUNT_FREE_TYPE, Long.class)
             .setParameter("type", type)
             .getSingleResult());
     }
 
     public static long countUsed() {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Spot.countUsed", Long.class)
+            .createNamedQuery(QUERY_COUNT_USED, Long.class)
             .getSingleResult());
     }
 
     public static long countUsed(final Type type) {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Spot.countUsedType", Long.class)
+            .createNamedQuery(QUERY_COUNT_USED_TYPE, Long.class)
             .setParameter("type", type)
             .getSingleResult());
     }
@@ -95,7 +104,7 @@ public class Spot extends Entity {
 
     public static Optional<Spot> anyFree(final Type type) {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Spot.anyFree", Spot.class)
+            .createNamedQuery(QUERY_ANY_FREE, Spot.class)
             .setParameter("type", type)
             .setMaxResults(1)
             .getResultStream().findFirst());

@@ -2,11 +2,14 @@ package de.codazz.houseofcars.domain;
 
 import javax.persistence.Column;
 import javax.persistence.Embedded;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.Objects;
 
 /** @author rstumm2s */
 @MappedSuperclass
@@ -47,13 +50,5 @@ public abstract class Transition<Event, State extends de.codazz.houseofcars.stat
 
     public ZonedDateTime time() {
         return time;
-    }
-
-    /** Implementors must define semantics
-     * about when this transition ends. */
-    public abstract Duration duration();
-
-    public de.codazz.houseofcars.template.Duration durationTemplate() {
-        return new de.codazz.houseofcars.template.Duration(duration());
     }
 }

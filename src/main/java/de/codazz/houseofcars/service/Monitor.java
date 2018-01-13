@@ -21,18 +21,18 @@ public class Monitor implements Runnable, Closeable {
     private final Timer timer = new Timer("Monitor", true);
 
     private final Consumer<VehicleTransition> startTimers = transition -> {
-        transition.vehicle().owner().ifPresent(owner -> transition.reminder()
+        transition.entity().owner().ifPresent(owner -> transition.reminder()
             // XXX timers expiring when the system is shut down are lost => persistent queue?
             .filter(it -> it.isAfter(ZonedDateTime.now()))
             .ifPresent(limit -> {
-                log.trace("will remind {} to pick up {} at {}", owner.getName(), transition.vehicle().license(), limit);
+                log.trace("will remind {} to pick up {} at {}", owner.getName(), transition.entity().license(), limit);
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        log.trace("reminding {} to pick up {}", owner.getName(), transition.vehicle().license());
+                        log.trace("reminding {} to pick up {}", owner.getName(), transition.entity().license());
                         de.codazz.houseofcars.websocket.subprotocol.Monitor.update();
                         Notifier.push(owner, new Notifier.Notification(
-                            transition.vehicle().license() + "'s spot expires " + de.codazz.houseofcars.template.ZonedDateTime.toString(limit),
+                            transition.entity().license() + "'s spot expires " + de.codazz.houseofcars.template.ZonedDateTime.toString(limit),
                             "Pick up before limit to avoid extra cost"
                         ));
                     }
@@ -43,15 +43,15 @@ public class Monitor implements Runnable, Closeable {
         transition.overdue()
             .filter(it -> it.isAfter(ZonedDateTime.now()))
             .ifPresent(limit -> {
-                log.trace("{} must free its spot until {}", transition.vehicle().license(), limit);
+                log.trace("{} must free its spot until {}", transition.entity().license(), limit);
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        log.warn("{} is overdue!", transition.vehicle().license());
+                        log.warn("{} is overdue!", transition.entity().license());
                         de.codazz.houseofcars.websocket.subprotocol.Monitor.update();
-                        transition.vehicle().owner().ifPresent(owner ->
+                        transition.entity().owner().ifPresent(owner ->
                             Notifier.push(owner, new Notifier.Notification(
-                                transition.vehicle().license() + " is overdue!",
+                                transition.entity().license() + " is overdue!",
                                 "Should have picked up until " + de.codazz.houseofcars.template.ZonedDateTime.toString(limit)
                             ))
                         );

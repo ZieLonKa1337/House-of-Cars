@@ -22,29 +22,31 @@ import java.util.function.Function;
 
 /** @author rstumm2s */
 @javax.persistence.Entity(name = "VehicleTransition")
-@NamedQuery(name = "VehicleTransition.since", query =
+@NamedQuery(name = VehicleTransition.QUERY_SINCE, query =
     "SELECT t FROM VehicleTransition t " +
     "WHERE t.time >= :time")
-@NamedQuery(name = "VehicleTransition.previous", query =
-    "SELECT t FROM VehicleTransition t " +
-    "WHERE t.time < :time" +
-    " AND t.vehicle = :vehicle " +
-    "ORDER BY t.time DESC")
-@NamedQuery(name = "VehicleTransition.next", query =
+@NamedQuery(name = VehicleTransition.QUERY_NEXT, query =
     "SELECT t FROM VehicleTransition t " +
     "WHERE t.time > :time" +
-    " AND t.vehicle = :vehicle " +
+    " AND t.entity = :entity " +
     "ORDER BY t.time")
+@NamedQuery(name = VehicleTransition.QUERY_PREVIOUS, query =
+    "SELECT t FROM VehicleTransition t " +
+    "WHERE t.time < :time" +
+    " AND t.entity = :entity " +
+    "ORDER BY t.time DESC")
 @EntityListeners(Monitor.class)
-public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
+public class VehicleTransition extends StatefulEntityTransition<VehicleTransition, Vehicle, Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
+    final static String
+        QUERY_NEXT     = "VehicleTransition.next",
+        QUERY_PREVIOUS = "VehicleTransition.previous",
+        QUERY_SINCE    = "VehicleTransition.since";
+
     public static TypedQuery<Transition> since(final ZonedDateTime time) {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("VehicleTransition.since", Transition.class)
+            .createNamedQuery(QUERY_SINCE, Transition.class)
             .setParameter("time", time));
     }
-
-    @ManyToOne(optional = false)
-    private Vehicle vehicle;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -58,11 +60,15 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
 
     /** @deprecated only for JPA */
     @Deprecated
-    protected VehicleTransition() {}
+    protected VehicleTransition() {
+        super(VehicleTransition.class, QUERY_NEXT, QUERY_PREVIOUS);
+    }
 
     protected VehicleTransition(final Vehicle vehicle, final Vehicle.State state, final Vehicle.State.Data data) {
-        super(data);
-        this.vehicle = vehicle;
+        super(
+            VehicleTransition.class, QUERY_NEXT, QUERY_PREVIOUS,
+            vehicle, data
+        );
         this.state = state;
     }
 
@@ -74,43 +80,8 @@ public class VehicleTransition extends de.codazz.houseofcars.domain.Transition<V
     }
 
     @Override
-    public Duration duration() {
-        return Duration.between(
-            time(),
-            next().map(Transition::time)
-                .orElseGet(ZonedDateTime::now)
-        );
-    }
-
-    public Vehicle vehicle() {
-        return vehicle;
-    }
-
-    @Override
     public Vehicle.State state() {
         return state;
-    }
-
-    /** @return the associated vehicle's
-     *     previous transition, if any */
-    public Optional<VehicleTransition> previous() {
-        return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("VehicleTransition.previous", VehicleTransition.class)
-            .setMaxResults(1)
-            .setParameter("time", time())
-            .setParameter("vehicle", vehicle)
-            .getResultStream().findFirst());
-    }
-
-    /** @return the associated vehicle's
-     *     next transition, if any */
-    public Optional<VehicleTransition> next() {
-        return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("VehicleTransition.next", VehicleTransition.class)
-            .setMaxResults(1)
-            .setParameter("time", time())
-            .setParameter("vehicle", vehicle)
-            .getResultStream().findFirst());
     }
 
     public Optional<BigDecimal> fee() {

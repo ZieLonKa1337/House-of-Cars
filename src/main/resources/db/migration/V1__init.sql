@@ -25,13 +25,13 @@ create table VehicleTransition (
 	time timestamptz not null,
 	OPTLOCK int8 not null,
 	fee numeric(16, 8), -- big enough for Bitcoin
-	"limit" varchar, -- iso_8601 interval
+	"limit" varchar(255), -- iso_8601 interval
 	paid boolean,
-	reminder varchar, -- iso_8601 interval
+	reminder varchar(255), -- iso_8601 interval
 	state varchar(255) not null,
 	recommendedSpot_id int4,
 	spot_id int4,
-	vehicle_license varchar(255) not null,
+	entity_license varchar(255) not null,
 	primary key (time)
 );
 
@@ -45,7 +45,7 @@ alter table VehicleTransition
 	add constraint FKfwx6x8epwf1v4meg57gifc5j1 foreign key (spot_id)references Spot;
 
 alter table VehicleTransition
-	add constraint FKqpjg4ijjfp76qofrp327h940c foreign key (vehicle_license)references Vehicle;
+	add constraint FKh02j9g0mtsusi3lkej2amgu4c foreign key (entity_license)references Vehicle;
 
 --
 
@@ -63,7 +63,7 @@ RETURNS SETOF vehicle_state_t AS $$
   time AS since
  FROM Vehicle
   LEFT JOIN VehicleTransition
-   ON VehicleTransition.vehicle_license = Vehicle.license
+   ON VehicleTransition.entity_license = Vehicle.license
     AND time <= $1
  ORDER BY license, time DESC
 $$ LANGUAGE sql

@@ -132,7 +132,7 @@ public class Monitor extends Broadcast {
             if (transition != null) {
                 paid = transition.paid().orElse(null);
                 price = transition.priceTemplate().map(Object::toString).orElse(null);
-                if (transition.vehicle().owner().isPresent()) {
+                if (transition.entity().owner().isPresent()) {
                     reminded = transition.reminder()
                         .map(limit -> limit.isBefore(ZonedDateTime.now()))
                         .orElse(false);

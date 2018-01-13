@@ -23,51 +23,60 @@ import java.util.Optional;
 
 /** @author rstumm2s */
 @javax.persistence.Entity
-@NamedQuery(name = "Vehicle.count", query =
+@NamedQuery(name = Vehicle.QUERY_COUNT, query =
     "SELECT COUNT(v) " +
     "FROM Vehicle v")
-@NamedQuery(name = "Vehicle.countPresent", query =
+@NamedQuery(name = Vehicle.QUERY_COUNT_PRESENT, query =
     "SELECT COUNT(t) " +
     "FROM vehicle_state t " +
     "WHERE t.state != 'Away'")
-@NamedQuery(name = "Vehicle.countPending", query =
+@NamedQuery(name = Vehicle.QUERY_COUNT_PENDING, query =
     "SELECT COUNT(t) " +
     "FROM vehicle_state t " +
     "WHERE t.state = 'LookingForSpot'" +
     " OR t.state = 'Leaving'")
-@NamedQuery(name = "Vehicle.countState", query =
+@NamedQuery(name = Vehicle.QUERY_COUNT_STATE, query =
     "SELECT COUNT(t) " +
     "FROM vehicle_state t " +
     "WHERE t.state = :state")
-@NamedQuery(name = "Vehicle.mayEnter", query =
+@NamedQuery(name = Vehicle.QUERY_MAY_ENTER, query =
     "SELECT COUNT(t) = 0 " +
     "FROM vehicle_state t " +
     "WHERE t.vehicle.license = :license" +
     " AND t.state != 'Away'")
-@NamedQuery(name = "Vehicle.lastTransition", query =
+@NamedQuery(name = Vehicle.QUERY_LAST_TRANSITION, query =
     "SELECT t " +
     "FROM VehicleTransition t " +
-    "WHERE t.vehicle = :vehicle " +
+    "WHERE t.entity = :entity " +
     "ORDER BY t.time DESC")
 @SqlResultSetMapping(name = "count", columns = @ColumnResult(name = "count"))
-@NamedNativeQuery(name = "Vehicle.countStateAt", resultSetMapping = "count", query =
+@NamedNativeQuery(name = Vehicle.QUERY_COUNT_STATE_AT, resultSetMapping = "count", query =
     "SELECT COUNT(*) " +
     "FROM vehicle_state_at(:time) " +
     "WHERE state = :state")
-public class Vehicle extends Entity {
+public class Vehicle extends StatefulEntity<Vehicle, Vehicle.Lifecycle, Vehicle.State, Vehicle.State.Data, Vehicle.Event, VehicleTransition> {
+    static final String
+        QUERY_COUNT           = "Vehicle.count",
+        QUERY_COUNT_PRESENT   = "Vehicle.countPresent",
+        QUERY_COUNT_PENDING   = "Vehicle.countPending",
+        QUERY_COUNT_STATE     = "Vehicle.countState",
+        QUERY_COUNT_STATE_AT  = "Vehicle.countStateAt",
+        QUERY_MAY_ENTER       = "Vehicle.mayEnter",
+        QUERY_LAST_TRANSITION = "Vehicle.lastTransition";
+
     private static final Logger log = LoggerFactory.getLogger(Vehicle.class);
 
     /** @return the number of known vehicles */
     public static long count() {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Vehicle.count", Long.class)
+            .createNamedQuery(QUERY_COUNT, Long.class)
             .getSingleResult());
     }
 
     /** @return the number of vehicles that are not {@link State#Away away} */
     public static long countPresent() {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Vehicle.countPresent", Long.class)
+            .createNamedQuery(QUERY_COUNT_PRESENT, Long.class)
             .getSingleResult());
     }
 
@@ -76,13 +85,13 @@ public class Vehicle extends Entity {
      * {@link State#Leaving leaving} */
     public static long countPending() {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Vehicle.countPending", Long.class)
+            .createNamedQuery(QUERY_COUNT_PENDING, Long.class)
             .getSingleResult());
     }
 
     public static long count(final State state) {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Vehicle.countState", Long.class)
+            .createNamedQuery(QUERY_COUNT_STATE, Long.class)
             .setParameter("state", state.name())
             .getSingleResult());
     }
@@ -91,7 +100,7 @@ public class Vehicle extends Entity {
      * @return the number of vehicles in the given state at the given time */
     public static int count(final State state, final ZonedDateTime time) {
         return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Vehicle.countStateAt", BigInteger.class)
+            .createNamedQuery(QUERY_COUNT_STATE_AT, BigInteger.class)
             .setParameter("state", state.name())
             .setParameter("time", time)
             .getSingleResult().intValueExact());
@@ -105,9 +114,12 @@ public class Vehicle extends Entity {
 
     /** @deprecated only for JPA */
     @Deprecated
-    protected Vehicle() {}
+    protected Vehicle() {
+        super(VehicleTransition.class, QUERY_LAST_TRANSITION);
+    }
 
     public Vehicle(final String license) {
+        super(VehicleTransition.class, QUERY_LAST_TRANSITION);
         this.license = license;
     }
 
@@ -123,34 +135,17 @@ public class Vehicle extends Entity {
         this.owner = owner;
     }
 
-    public Optional<VehicleTransition> lastTransition() {
-        return Garage.instance().persistence.execute(em -> em
-            .createNamedQuery("Vehicle.lastTransition", VehicleTransition.class)
-            .setMaxResults(1)
-            .setParameter("vehicle", this)
-            .getResultStream().findFirst());
+    @Override
+    protected Lifecycle initLifecycle() {
+        return new Lifecycle(new VehicleTransition(this,
+            State.Away,
+            new State.Data()
+        ));
     }
 
-    @Transient
-    private transient volatile Lifecycle lifecycle;
-
-    /** do not cache! may be a new instance */
-    public Lifecycle state() {
-        return state(lastTransition().orElse(null));
-    }
-
-    /** restore to specified state
-     * @param init {@code null} for root state */
-    Lifecycle state(final VehicleTransition init) {
-        if (init == null) {
-            lifecycle = new Lifecycle(new VehicleTransition(this,
-                State.Away,
-                new State.Data()
-            ));
-        } else if (lifecycle == null || lifecycle.state() != init.state()) {
-            lifecycle = new Lifecycle(init);
-        }
-        return lifecycle;
+    @Override
+    protected Lifecycle restoreLifecycle(final VehicleTransition init) {
+        return new Lifecycle(init);
     }
 
     /** marker interface */
@@ -359,10 +354,10 @@ public class Vehicle extends Entity {
             /** {@code null}: nothing to pay */
             Boolean paid;
 
-            @Column(columnDefinition = "interval")
+            @Column//(columnDefinition = "interval")
             Duration reminder;
             /** a vehicle parking longer than this is overdue */
-            @Column(name = "\"limit\"", columnDefinition = "interval")
+            @Column(name = "\"limit\""/*, columnDefinition = "interval"*/)
             Duration limit;
 
             @Override
