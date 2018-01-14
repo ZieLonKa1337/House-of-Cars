@@ -93,7 +93,7 @@
         </tr>
     </thead>
     <tbody>
-        {{#session.customer.vehicles}}
+        {{#session.customer.lruVehicles}}
         <tr>
             <th>{{license}}</th>
             <td>{{lastTransition.state}}</td>
@@ -101,7 +101,40 @@
             <td {{^lastTransition.priceTemplate}}class="spacer"{{/lastTransition.priceTemplate}}>{{lastTransition.priceTemplate}}</td>
             <td {{^lastTransition.overdueTemplate}}class="spacer"{{/lastTransition.overdueTemplate}}>{{lastTransition.overdueTemplate}}</td>
         </tr>
-        {{/session.customer.vehicles}}
+        {{/session.customer.lruVehicles}}
+        <tr>
+            <th>
+                <button>add another</button>
+                <script>
+                (() => {
+                    let socket = new WebSocket('ws://' + location.host + '/ws/customers');
+                    socket.onmessage = msg => {
+                        let data = JSON.parse(msg.data);
+                        switch (data.type) {
+                            case 'merge':
+                                socket.send(JSON.stringify({
+                                    type: 'merge',
+                                    vehicle: data.license,
+                                    pass: prompt('What is ' + data.license + '\'s password?')
+                                }));
+                                break;
+                            case 'changed':
+                                location = location;
+                                break;
+                        }
+                    };
+
+                    let button = document.currentScript.previousElementSibling;
+                    button.onclick = () => {
+                        socket.send(JSON.stringify({
+                            type: 'add-vehicle',
+                            vehicle: prompt('What is your vehicle\'s license plate number?')
+                        }));
+                    };
+                })();
+                </script>
+            </th>
+        </tr>
     </tbody>
 </table>
 

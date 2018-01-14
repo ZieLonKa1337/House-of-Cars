@@ -1,7 +1,5 @@
 package de.codazz.houseofcars.websocket.subprotocol;
 
-import de.codazz.houseofcars.Garage;
-import de.codazz.houseofcars.MagicCookie;
 import de.codazz.houseofcars.websocket.Message;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -12,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
-import java.net.HttpCookie;
 import java.security.Principal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,8 +17,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /** @author rstumm2s */
 @WebSocket
 public class Notifier {
-    private static final Logger log = LoggerFactory.getLogger(Notifier.class);
-
     private static volatile Notifier instance; {
         if (instance != null) throw new IllegalStateException();
         instance = this;
@@ -35,16 +30,7 @@ public class Notifier {
 
     @OnWebSocketConnect
     public void connected(final Session session) {
-        session.getUpgradeRequest().getCookies().stream()
-            .filter(it -> it.getName().equals("hoc-magic"))
-            .findFirst()
-                .map(HttpCookie::getValue)
-                .ifPresent(magic -> Garage.instance().sessions.present()
-                    .filter(it -> it.getPublicCredentials(MagicCookie.class).stream()
-                        .map(cookie -> cookie.value)
-                        .anyMatch(magic::equals)
-                    ).findFirst()
-                        .ifPresent(subject -> sessions.put(session, subject)));
+        Customers.subjectFromMagicCookie(session).ifPresent(it -> sessions.put(session, it));
     }
 
     @OnWebSocketClose

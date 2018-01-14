@@ -6,6 +6,7 @@ import de.codazz.houseofcars.domain.Spot;
 import de.codazz.houseofcars.domain.Vehicle;
 import de.codazz.houseofcars.service.Monitor;
 import de.codazz.houseofcars.service.Sessions;
+import de.codazz.houseofcars.websocket.subprotocol.Customers;
 import de.codazz.houseofcars.websocket.subprotocol.Gate;
 import de.codazz.houseofcars.websocket.subprotocol.History;
 import de.codazz.houseofcars.websocket.subprotocol.Notifier;
@@ -97,6 +98,7 @@ public class Garage implements Runnable, Closeable {
         webSocket("/ws/status/monitor", de.codazz.houseofcars.websocket.subprotocol.Monitor.class);
         webSocket("/ws/status/notifications", Notifier.class);
         webSocket("/ws/statistics", Statistics.class);
+        webSocket("/ws/customers", Customers.class);
         webSocket("/ws/gate", Gate.class);
         webSocket("/ws/vgate", VGate.class);
 

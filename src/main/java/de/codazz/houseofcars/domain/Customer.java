@@ -8,7 +8,6 @@ import javax.persistence.Id;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import java.security.Principal;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -63,6 +62,20 @@ public class Customer extends Entity implements Principal {
 
     public Set<Vehicle> vehicles() {
         return Collections.unmodifiableSet(vehicles);
+    }
+
+    public Vehicle[] lruVehicles() {
+        return vehicles().stream()
+            .sorted((a, b) -> {
+                final VehicleTransition
+                    tA = a.lastTransition().orElse(null),
+                    tB = b.lastTransition().orElse(null);
+                if (tA == null && tB == null) return 0;
+                if (tA == null) return -1;
+                if (tB == null) return 1;
+                return tB.time().compareTo(tA.time());
+            })
+            .toArray(Vehicle[]::new);
     }
 
     public List<Reservation> reservations() {

@@ -1,8 +1,10 @@
 package de.codazz.houseofcars.service;
 
 import de.codazz.houseofcars.Garage;
+import de.codazz.houseofcars.MagicCookie;
 import de.codazz.houseofcars.domain.Customer;
 import de.codazz.houseofcars.domain.Vehicle;
+import org.eclipse.jetty.websocket.api.Session;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +15,11 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.net.HttpCookie;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /** @author rstumm2s */
