@@ -88,8 +88,8 @@
             <th class="spacer"></th>
             <th>State</th>
             <th>Duration</th>
-            <th>Price</th>
             <th>Limit</th>
+            <th>Price</th>
         </tr>
     </thead>
     <tbody>
@@ -98,8 +98,8 @@
             <th>{{license}}</th>
             <td>{{lastTransition.state}}</td>
             <td>{{lastTransition.durationTemplate}}</td>
-            <td {{^lastTransition.priceTemplate}}class="spacer"{{/lastTransition.priceTemplate}}>{{lastTransition.priceTemplate}}</td>
             <td {{^lastTransition.overdueTemplate}}class="spacer"{{/lastTransition.overdueTemplate}}>{{lastTransition.overdueTemplate}}</td>
+            <td {{^lastTransition.priceTemplate}}class="spacer"{{/lastTransition.priceTemplate}}>{{lastTransition.priceTemplate}}</td>
         </tr>
         {{/session.customer.lruVehicles}}
         <tr>
