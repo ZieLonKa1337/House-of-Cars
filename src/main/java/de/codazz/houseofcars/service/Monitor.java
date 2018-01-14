@@ -6,7 +6,6 @@ import de.codazz.houseofcars.websocket.subprotocol.Notifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.PostPersist;
 import java.io.Closeable;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -78,7 +77,7 @@ public class Monitor implements Runnable, Closeable {
         timer.cancel();
     }
 
-    @PostPersist
+    /** @see javax.persistence.PostPersist */
     public void postPersist(final VehicleTransition transition) {
         startTimers.accept(transition);
     }

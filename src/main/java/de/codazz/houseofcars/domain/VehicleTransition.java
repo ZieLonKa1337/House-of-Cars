@@ -1,6 +1,7 @@
 package de.codazz.houseofcars.domain;
 
 import de.codazz.houseofcars.Garage;
+import de.codazz.houseofcars.VehicleTransitionListener;
 import de.codazz.houseofcars.service.Monitor;
 import de.codazz.houseofcars.template.Price;
 
@@ -33,7 +34,7 @@ import java.util.function.Function;
     "WHERE t.time < :time" +
     " AND t.entity = :entity " +
     "ORDER BY t.time DESC")
-@EntityListeners(Monitor.class)
+@EntityListeners(VehicleTransitionListener.class)
 public class VehicleTransition extends StatefulEntityTransition<VehicleTransition, Vehicle, Vehicle.Event, Vehicle.State, Vehicle.State.Data> {
     final static String
         QUERY_NEXT     = "VehicleTransition.next",
