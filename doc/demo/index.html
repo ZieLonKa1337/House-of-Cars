@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+    body {
+        padding-left: 4%;
+        padding-right: 4%;
+    }
+
+    figure {
+        display: inline-block;
+        border: 2px outset gray;
+    }
+
+    figcaption {
+        text-align: center;
+        font-style: italic;
+        padding: 2px;
+        background: burlywood;
+        border-top: 2px ridge;
+    }
+
+    .example {
+        color: gray;
+    }
+
+    #revision {
+        float: right;
+    }
+    </style>
+</head>
+<body>
+
+<pre id="revision">Revision: 186d1428ba1d71258d3827045fb81ddee206c1e5</pre>
+
+<h1>Demo-Tour</h1>
+
+Die Anwendung stellt drei Seiten bereit:
+
+<section>
+    <h2>Kundenportal</h2>
+    <em><span class="example">http://&lt;host&gt;:&lt;port&gt;</span>/</em>
+    <p>
+        Startseite mit Login. Hier k&ouml;nnen Kunden ihre Fahrzeuge
+        und Reservierungen verwalten.
+    </p>
+</section>
+
+<section>
+    <h2>Virtuelle Schranke</h2>
+    <em><span class="example">http://&lt;host&gt;:&lt;port&gt;</span>/vgate</em>
+    <p>
+        Eine Schranke aus der Sicht der Fahrer. Hier kann das Parkhaus
+        betreten oder verlassen werden.
+    </p>
+    <p>
+        Parker brauchen kein Ticket zu ziehen. Es gen&uuml;gt, an die Schranke heranzufahren,
+        und ein Nummernschildleser &ouml;ffnet die Schranke automatisch (falls das Fahrzeug
+        berechtigt ist, das Parkhaus zu betreten bzw. zu verlassen).
+    </p>
+    <p>
+        Ein Nummernschildleser kann man in dieser Situation durch einfache Kameras realisieren,
+        weshalb die Kosten nicht mit denen von polizeilich eingesetzen Nummernschildlesern
+        zu vergleichen sind. In der Simulation m&uuml;ssen Nummernschilder manuell eingeben
+        werden.
+    </p>
+
+    <h3>Einfahrt</h3>
+    <ol>
+        <li>Ein Fahrzeug f&auml;hrt an die Schranke heran.</li>
+        <li>
+            Sobald der Nummernschildleser das Fahrzeug erfasst hat &uuml;berpr&uuml;ft die
+            Schranke, ob das Fahrzeug Zutritt zum Parkhaus bekommen soll. Dazu wird anhand
+            von aktuellen Parkern und Reservierungen festgestellt, ob noch ein Platz frei ist.
+            <br/>
+            Nach wenigen Sekunden &ouml;ffnet sich die Schranke und zeigt die Nummer eines
+            empfohlenen freien Parkplatzes an. Der Fahrer kann nun der Beschilderung
+            folgen, ist aber auch frei, einen anderen Platz zu w&auml;hlen.
+        </li>
+        <li>
+            Die Schranke schlie&szlig;t hinter dem Fahrzeug wieder. Der Button ist deaktiviert,
+            um zu signalisieren, dass das eingetragene Fahrzeug bereits im Parkhaus ist. Ein
+            zweites  Fahrzeug mit identischem Nummernschild sollte es nicht geben - falls doch,
+            wird es nicht hereingelassen.
+        </li>
+    </ol>
+    <figure>
+        <img src="vgate-in1.jpg"/>
+        <figcaption>Schritt 1</figcaption>
+    </figure>
+    <figure>
+        <img src="vgate-in2.jpg"/>
+        <figcaption>Schritt 2</figcaption>
+    </figure><figure>
+        <img src="vgate-in3.jpg"/>
+        <figcaption>Schritt 3</figcaption>
+    </figure>
+
+    <h3>Ausfahrt</h3>
+    <ol>
+        <li>
+            Das Fahrzeug verl&auml;sst seinen Platz, was von dem dortigen Nummernschildleser
+            gemeldet wird. Ab diesem Moment berechnen wir keine Geb&uuml;hren mehr. Solange
+            der anfallende Preis aber noch nicht bezahlt ist, darf das Fahrzeug das Parkhaus
+            nicht verlassen - der Button ist deaktiviert.
+        </li>
+        <li>
+            Sobald der Kunde bezahlt hat wird der Button aktiviert - das Fahrzeug darf nun
+            das Parkhaus verlassen. Ist das Fahrzeug mit einer Zahlungsmethode registriert,
+            wird der Preis automatisch abgerechnet. Dazu ist leider noch kein Equivalent
+            implementiert.
+        </li>
+        <li>
+            Beim Heranfahren an die Schranke wird diese ge&ouml;ffnet und der Kunde kann
+            direkt hinausfahren.
+        </li>
+    </ol>
+    <figure>
+        <img src="vgate-out1.jpg"/>
+        <figcaption>Schritt 1</figcaption>
+    </figure>
+    <figure>
+        <img src="vgate-out2.jpg"/>
+        <figcaption>Schritt 2</figcaption>
+    </figure>
+    <figure>
+        <img src="vgate-out3.jpg"/>
+        <figcaption>Schritt 3</figcaption>
+    </figure>
+</section>
+
+<section>
+    <h2>Administration und Statistiken</h2>
+    <em><span class="example">http://&lt;host&gt;:&lt;port&gt;</span>/dashboard</em>
+    <p>
+        In der Praxis sollte dieser Bereich gesondert zugriffsgesch&uuml;tzt werden,
+        etwa durch den Einsatz eines Reverse Proxy wie NGINX mit HTTP Basic Authentication.
+    </p>
+</section>
+
+</body>
+</html>

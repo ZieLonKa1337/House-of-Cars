@@ -25,7 +25,7 @@ verbessern.
   Klassen sind noch Singletons.
 - Es sollte in Betracht gezogen werden, einige Services mit Hilfe des
   `java.util.ServiceLoader` zu implementieren.
-- Einige Auswertungen sollten nicht von der Anwendung sondern der
-  Datenbank selber durchgeführt werden. Das ist nicht nur performanter
-  sondern vereinfacht auch die Datenverarbeitung von der Datenbank zum
-  Frontend.
+- Einige Auswertungen wie z.B. die Berechnung des Preises sollten nicht
+  von der Anwendung sondern der Datenbank selber durchgeführt werden.
+  Das ist nicht nur performanter sondern vereinfacht auch die
+  Datenverarbeitung von der Datenbank zum Frontend.

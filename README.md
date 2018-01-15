@@ -10,7 +10,7 @@ Informationssicherheit an der H-BRS, Wintersemester 2017.
 - [Verzeichnis der eingesetzten Patterns](doc/Patterns.md)
 - [Summarisches Projektprotokoll](doc/Protokoll.pdf)
 - [Resumée und Fazit](doc/Fazit.md)
-- Präsentation
+- [Präsentation](doc/demo/index.html)
 
 ## Setup
 
