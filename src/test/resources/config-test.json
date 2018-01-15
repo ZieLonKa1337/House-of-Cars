@@ -3,9 +3,18 @@
   "jdbcUrl": "jdbc:postgresql://localhost:5432/houseofcars-test",
   "jdbcUser": "houseofcars-test",
   "jdbcPassword": "h-brs",
+  "currency": {
+    "name": " €",
+    "scale": 2
+  },
   "fee": {
     "CAR": 1,
     "BIKE": 2,
     "HANDICAP": 3
-  }
+  },
+  "limit": {
+    "reminder": "PT24H",
+    "overdue": "PT72H"
+  },
+  "motd": "Emergency / Support: +00 123 456789"
 }
