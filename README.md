@@ -43,6 +43,20 @@ all available options (comments are invalid syntax):
 }
 ```
 
+To see all log messages, include a `simplelogger.properties` file in the
+runtime resources:
+
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.business.Gate=trace
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.service.Monitor=trace
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.service.Sessions=trace
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.domain.Reservation=trace
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.domain.Vehicle=trace
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.websocket.Broadcast=trace
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.websocket.subprotocol.History=trace
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.websocket.subprotocol.Monitor=trace
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.websocket.subprotocol.Gate=trace
+    org.slf4j.simpleLogger.log.de.codazz.houseofcars.websocket.subprotocol.VGate=trace
+
 ### Database
 
 Before running, set up a PostgreSQL cluster according to your JDBC
