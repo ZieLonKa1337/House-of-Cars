@@ -146,7 +146,7 @@
 
 <form id="license-reader" action="javascript:void(0);">
     <!-- FIXME event for auto-filled value on page load -->
-    <input name="license" type="text" autofocus="" required=""
+    <input name="license" type="text" autofocus="" required="" placeholder="ABXY1234"
         onfocus="__hoc.vgate.updateReaderButtons(value);"
         onkeyup="__hoc.vgate.updateReaderButtons(value);"/>
     <button name="enter" onclick="__hoc.vgate.requestEnter(form.license.value);">Enter</button>
