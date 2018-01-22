@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8"/>
     <style>
     body {
         padding-left: 4%;
@@ -18,6 +19,11 @@
         padding: 2px;
         background: burlywood;
         border-top: 2px ridge;
+    }
+
+    img.inline {
+        height: 1em;
+        vertical-align: text-top;
     }
 
     .example {
@@ -41,9 +47,74 @@ Die Anwendung stellt drei Seiten bereit:
     <h2>Kundenportal</h2>
     <em><span class="example">http://&lt;host&gt;:&lt;port&gt;</span>/</em>
     <p>
-        Startseite mit Login. Hier k&ouml;nnen Kunden ihre Fahrzeuge
+        Startseite mit Login. Hier können Kunden ihre Fahrzeuge
         und Reservierungen verwalten.
     </p>
+    <figure>
+        <img src="login.jpg"/>
+        <figcaption>Login</figcaption>
+    </figure>
+    <figure>
+        <img src="login2.jpg"/>
+        <figcaption>Überblick: Ein Fahrzeug abwesend, eine Reservierung</figcaption>
+    </figure>
+
+    <p>
+        Die folgende <a href="#login-vehicles">Figur</a> zeigt ein Fahrzeug f&uuml;r
+        jeden möglichen Zustand. Aus der Tabelle lassen sich folgende Aussagen
+        ablesen:
+    </p>
+    <ul>
+        <li><strong>ABXY0000</strong> ist seit 4 Minuten und 23 Sekunden nicht mehr im Parkhaus.<br/></li>
+        <li><strong>ABXY0001</strong> ist seit 12 Sekunden im Parkhaus und sucht nach einem Platz.<br/></li>
+        <li>
+            <strong>ABXY0002</strong> parkt seit 12 Sekunden. Der Kunde muss den Parkplatz spätestens
+            am 22. Januar 17:58 Uhr räumen.
+        </li>
+        <li>
+            <strong>ABXY0003</strong> hat den Parkplatz vor einer Sekunde frei gemacht und ist nun
+            auf dem Weg, das Parkhaus zu verlassen. Die Ausfahrt ist nur gestattet, wenn der angezeigte
+            Preis von 0.08 € bezahlt wurde. Kunden mit registrierter Zahlungsmöglichkeit können trotzdem
+            einfach hinausfahren - es wird automatisch abgebucht.
+        </li>
+    </ul>
+    <figure id="login-vehicles">
+        <img src="login-vehicles.jpg"/>
+        <figcaption>Fahrzeugzustände</figcaption>
+    </figure>
+
+    <p>
+        Durch Druck auf <img src="add-another.jpg" class="inline"/> kann der Kunde ein weiteres
+        Fahrzeug auf sich registrieren:
+    </p>
+    <ol>
+        <li>Der Kunde gibt das Nummernschild seines Zweitfahrzeugs an.</li>
+        <li>
+            Falls das Fahrzeug bereits auf jemand anderen registriert ist, muss der Kunde
+            das Passwort desjenigen kennen, damit er den Fahrzeughalter ändern kann.
+        </li>
+    </ol>
+    <figure>
+        <img src="login-merge1.jpg"/>
+        <figcaption>Schritt 1</figcaption>
+    </figure>
+    <figure>
+        <img src="login-merge2.jpg"/>
+        <figcaption>Schritt 2</figcaption>
+    </figure>
+
+    <p>Um eine Reservierung vorzunehmen sind lediglich folgende Angaben erforderlich:</p>
+    <ul>
+        <li>Start- und Enddatum</li>
+        <li>gewünschter Parkplatztyp</li>
+    </ul>
+    <p>
+        In diesem Zeitraum wird ein Platz des gewählten Typs zurückgehalten werden, indem der Zähler einen Platz subtrahiert.
+    </p>
+    <figure>
+        <img src="login-reservation.jpg"/>
+        <figcaption>Anlegen einer Reservierung</figcaption>
+    </figure>
 </section>
 
 <section>
@@ -54,31 +125,31 @@ Die Anwendung stellt drei Seiten bereit:
         betreten oder verlassen werden.
     </p>
     <p>
-        Parker brauchen kein Ticket zu ziehen. Es gen&uuml;gt, an die Schranke heranzufahren,
-        und ein Nummernschildleser &ouml;ffnet die Schranke automatisch (falls das Fahrzeug
+        Parker brauchen kein Ticket zu ziehen. Es genügt, an die Schranke heranzufahren,
+        und ein Nummernschildleser öffnet die Schranke automatisch (falls das Fahrzeug
         berechtigt ist, das Parkhaus zu betreten bzw. zu verlassen).
     </p>
     <p>
         Ein Nummernschildleser kann man in dieser Situation durch einfache Kameras realisieren,
         weshalb die Kosten nicht mit denen von polizeilich eingesetzen Nummernschildlesern
-        zu vergleichen sind. In der Simulation m&uuml;ssen Nummernschilder manuell eingeben
+        zu vergleichen sind. In der Simulation müssen Nummernschilder manuell eingeben
         werden.
     </p>
 
     <h3>Einfahrt</h3>
     <ol>
-        <li>Ein Fahrzeug f&auml;hrt an die Schranke heran.</li>
+        <li>Ein Fahrzeug fährt an die Schranke heran.</li>
         <li>
-            Sobald der Nummernschildleser das Fahrzeug erfasst hat &uuml;berpr&uuml;ft die
+            Sobald der Nummernschildleser das Fahrzeug erfasst hat überprüft die
             Schranke, ob das Fahrzeug Zutritt zum Parkhaus bekommen soll. Dazu wird anhand
             von aktuellen Parkern und Reservierungen festgestellt, ob noch ein Platz frei ist.
             <br/>
-            Nach wenigen Sekunden &ouml;ffnet sich die Schranke und zeigt die Nummer eines
+            Nach wenigen Sekunden öffnet sich die Schranke und zeigt die Nummer eines
             empfohlenen freien Parkplatzes an. Der Fahrer kann nun der Beschilderung
-            folgen, ist aber auch frei, einen anderen Platz zu w&auml;hlen.
+            folgen, ist aber auch frei, einen anderen Platz zu wählen.
         </li>
         <li>
-            Die Schranke schlie&szlig;t hinter dem Fahrzeug wieder. Der Button ist deaktiviert,
+            Die Schranke schließt hinter dem Fahrzeug wieder. Der Button ist deaktiviert,
             um zu signalisieren, dass das eingetragene Fahrzeug bereits im Parkhaus ist. Ein
             zweites  Fahrzeug mit identischem Nummernschild sollte es nicht geben - falls doch,
             wird es nicht hereingelassen.
@@ -91,7 +162,8 @@ Die Anwendung stellt drei Seiten bereit:
     <figure>
         <img src="vgate-in2.jpg"/>
         <figcaption>Schritt 2</figcaption>
-    </figure><figure>
+    </figure>
+    <figure>
         <img src="vgate-in3.jpg"/>
         <figcaption>Schritt 3</figcaption>
     </figure>
@@ -99,8 +171,8 @@ Die Anwendung stellt drei Seiten bereit:
     <h3>Ausfahrt</h3>
     <ol>
         <li>
-            Das Fahrzeug verl&auml;sst seinen Platz, was von dem dortigen Nummernschildleser
-            gemeldet wird. Ab diesem Moment berechnen wir keine Geb&uuml;hren mehr. Solange
+            Das Fahrzeug verlässt seinen Platz, was von dem dortigen Nummernschildleser
+            gemeldet wird. Ab diesem Moment berechnen wir keine Gebühren mehr. Solange
             der anfallende Preis aber noch nicht bezahlt ist, darf das Fahrzeug das Parkhaus
             nicht verlassen - der Button ist deaktiviert.
         </li>
@@ -111,7 +183,7 @@ Die Anwendung stellt drei Seiten bereit:
             implementiert.
         </li>
         <li>
-            Beim Heranfahren an die Schranke wird diese ge&ouml;ffnet und der Kunde kann
+            Beim Heranfahren an die Schranke wird diese geöffnet und der Kunde kann
             direkt hinausfahren.
         </li>
     </ol>
@@ -133,7 +205,7 @@ Die Anwendung stellt drei Seiten bereit:
     <h2>Administration und Statistiken</h2>
     <em><span class="example">http://&lt;host&gt;:&lt;port&gt;</span>/dashboard</em>
     <p>
-        In der Praxis sollte dieser Bereich gesondert zugriffsgesch&uuml;tzt werden,
+        In der Praxis sollte dieser Bereich gesondert zugriffsgeschützt werden,
         etwa durch den Einsatz eines Reverse Proxy wie NGINX mit HTTP Basic Authentication.
     </p>
 </section>
