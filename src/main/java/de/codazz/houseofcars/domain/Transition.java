@@ -2,8 +2,6 @@ package de.codazz.houseofcars.domain;
 
 import javax.persistence.Column;
 import javax.persistence.Embedded;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import java.time.Clock;
@@ -50,5 +48,18 @@ public abstract class Transition<Event, State extends de.codazz.houseofcars.stat
 
     public ZonedDateTime time() {
         return time;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Transition)) return false;
+        final Transition<?, ?, ?> that = (Transition<?, ?, ?>) o;
+        return Objects.equals(time, that.time);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(time);
     }
 }
