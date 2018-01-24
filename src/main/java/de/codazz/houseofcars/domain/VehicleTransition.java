@@ -2,7 +2,6 @@ package de.codazz.houseofcars.domain;
 
 import de.codazz.houseofcars.Garage;
 import de.codazz.houseofcars.VehicleTransitionListener;
-import de.codazz.houseofcars.service.Monitor;
 import de.codazz.houseofcars.template.Price;
 
 import javax.persistence.Column;

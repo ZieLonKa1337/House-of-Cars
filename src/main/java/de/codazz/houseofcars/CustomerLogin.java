@@ -3,8 +3,6 @@ package de.codazz.houseofcars;
 import de.codazz.houseofcars.domain.Customer;
 import de.codazz.houseofcars.domain.Vehicle;
 import org.mindrot.jbcrypt.BCrypt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
