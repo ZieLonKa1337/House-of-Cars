@@ -13,6 +13,10 @@
         border: 2px outset gray;
     }
 
+    figure img {
+        display: block;
+    }
+
     figcaption {
         text-align: center;
         font-style: italic;
@@ -37,7 +41,7 @@
 </head>
 <body>
 
-<pre id="revision">Revision: 186d1428ba1d71258d3827045fb81ddee206c1e5</pre>
+<pre id="revision">Revision: 32cda7f4aa6fce70b2fed9460a8faec416a0a5d4</pre>
 
 <h1>Demo-Tour</h1>
 
@@ -208,6 +212,68 @@ Die Anwendung stellt drei Seiten bereit:
         In der Praxis sollte dieser Bereich gesondert zugriffsgeschützt werden,
         etwa durch den Einsatz eines Reverse Proxy wie NGINX mit HTTP Basic Authentication.
     </p>
+
+    <h3>Statistiken</h3>
+    <p>
+        Ein Graph zeigt die Anzahl der Fahrzeuge per Zustand über Zeit.
+        Eine Linie zeigt zur besseren Lesbarkeit auch den aktuellen Wert an.
+    </p>
+    <figure>
+        <img src="dashboard-history1.jpg"/>
+    </figure>
+    <p>
+        Durch Klicken auf die Legende lassen sich Datensätze ausblenden.
+        Wenn z.B. nur die anwesenden Fahrzeuge von Interesse sind:
+    </p>
+    <figure>
+        <img src="dashboard-history2.jpg"/>
+    </figure>
+    <p>
+        Dadurch lassen sich aussagekräftige Visualisierugen anzeigen.
+        Wie lange brauchten Kunden, um ein- und auszuparken?
+    </p>
+    <figure>
+        <img src="dashboard-history3.jpg"/>
+    </figure>
+    <p>
+        Wird es mal unübersichtlich, kann mit der Maus ein Detailfenster aufgerufen werden.
+    </p>
+    <figure>
+        <img src="dashboard-history4.jpg"/>
+        <figcaption>Präzisionsanzeige mit der Maus</figcaption>
+    </figure>
+
+    <p>Der Graph lässt sich zeitlich beschränken.</p>
+    <figure>
+        <img src="dashboard-interval.jpg"/>
+    </figure>
+
+    <p>Für den gewählten Zeitraum werden auch Statistiken angezeigt.</p>
+    <figure>
+        <img src="dashboard-stats.jpg"/>
+    </figure>
+
+    <h3>Monitor</h3>
+    <p>
+        Zeigt alle aktuell im Parkhaus anwesenden Fahrzeuge und ihren Status.
+        Mit der Maus können Fahrzeuge manuell in einen anderen Zustand verschoben werden.
+    </p>
+    <ul>
+        <li><strong>ABXY0000</strong> ist nicht mehr zurückgekommen.</li>
+        <li><strong>ABXY0001</strong> sucht nach einem Parkplatz.</li>
+        <li><strong>ABXY0002</strong> parkt. Der Besitzer wurde erinnert, den Platz rechtzeitig zu verlassen.</li>
+        <li><strong>ABXY0003</strong> verlässt das Parkhaus, hat aber noch nicht bezahlt.</li>
+        <li><strong>ABXY0004</strong> hat das Parklimit überschritten. Der Wagen wird abgeschleppt.</li>
+        <li><strong>ABXY0005</strong> verlässt das Parkhaus. Der Parkvorgang ist bezahlt.</li>
+        <li><strong>ABXY0006</strong> parkt.</li>
+    </ul>
+    <figure>
+        <img src="dashboard-monitor.jpg"/>
+    </figure>
+    <p>Kunden, die ihr Fahrzeug registriert haben, erhalten Erinnerungen.</p>
+    <figure>
+        <img src="login-notifications.jpg"/>
+    </figure>
 </section>
 
 </body>
